@@ -3,39 +3,116 @@
 % Michael Lee
 
 > module Lect.Lect02 where
+> import Data.List
 
 Introduction to Haskell
 =======================
 
 Agenda:
 
-- working with literate Haskell source files
-- general development workflow with Stack and GHCi
-- notable features and characteristics of the language
-- on whitespace sensitivity
+- working with literate source files
+
+- general development workflow and tools
+
+- notable (& maybe surprising) language features
+
+- indentation and layout rules
 
 
 Literate Haskell
 ----------------
 
+Regular Haskell source code filenames end in ".hs" --- all your assignments
+will use this extension --- but they can also end in ".lhs", which denotes a
+"literate" Haskell source file. In a literate source file, all text defaults
+to being a comment; lines of source code must start with the ">" character,
+and must also be separated from other text by at least one empty line.
 
-Development workflow
---------------------
+All lecture notes will be provided as literate source files. Here's what code
+would look like in a literate source file:
+
+> welcome = putStrLn "Welcome to CS 340!"
 
 
-Notable features
-----------------
+Development workflow and tools
+------------------------------
 
-1. Strong static typing
+You'll need to switch frequently between multiple tools and platforms to
+do your work in this class. They include:
 
-2. Purely functional
+- Git, a version control system
 
-3. Lazy evaluation
+- Bitbucket, a Git hosting service
 
-4. Concise
+- Stack, a tool you'll use to install the Haskell compiler and libraries,
+  and compile and test your code
 
-   - Functional style lends itself to concision. I.e., declarative "what"
-     to do instead of imperative "how" to do it.
+- a source code editor with Haskell support --- I recommend Visual Studio Code
+  with the Haskelly plugin unless you strongly prefer a different editor and
+  are willing to figure out how to set it up on your own
+
+Screencast demonstrating the tools above at https://youtu.be/JUIFbKOoCSA
+
+
+Notable (& maybe surprising) language features
+----------------------------------------------
+
+1. Strong static typing: Every expression or variable has a type associated with
+                         it that doesn't change, and is rigidly enforced by the
+                         compiler.
+
+
+2. Type inference: The compiler can figure out the types of many things, so that
+                   we don't have to expliclty label them.
+
+> -- use the :t GHCi command to get the type of each of the below
+>
+> mysteryVar1 = 123 `mod` 8
+>
+> mysteryVar2 = words "hello how are you?"
+> 
+> mysteryFn1 = (^2)
+>
+> mysteryFn2 = length . words
+> 
+> mysteryFn3 f s = [(abs $ f $ length w, w) | w <- words s]
+
+
+3. Purely functional: Once variables are bound to values they cannot be changed
+                      (i.e., variables are immutable).
+
+> boundVar = 10
+> -- boundVar = 20 -- error!
+ 
+
+4. Lazy evaluation: Computations are not performed (e.g., function evaluations)
+                    until they are strictly needed.
+
+> possiblyTragic c = let e = error "Eeek!"
+>                        u = undefined
+>                    in case c of 'e' -> e
+>                                 'u' -> u
+>                                 otherwise -> "safe"
+>
+> safeDiv x y = let q = x `div` y
+>               in if y == 0
+>                  then 0
+>                  else q
+
+
+5 . Order-independence: The order bindings appear in code doesn't matter.
+
+> w = x + 2
+> x = w - 5
+>
+> evenN 0 = True
+> evenN n = oddN (n-1)
+>
+> oddN 0 = False
+> oddN n = evenN (n-1)
+
+
+6. Concise
 
    - Small language with few keywords:
 
@@ -43,37 +120,42 @@ Notable features
        import  in  infix  infixl  infixr  instance
        let  module  newtype  of  then  type  where
 
+   - Declarative vs. Imperative style!
 
-Whitespace sensitivity
-----------------------
+> palindromes = sortOn snd
+>               . map (\w -> (w,length w))
+>               . filter (\s -> reverse s == s)
+>               . words 
 
 
+Indentation & Layout rules
+--------------------------
 
-Bindings and Purity
--------------------
+Haskell supports the use of semicolons and curly braces for delineating
+and separating blocks of code, but they are rarely used. Instead, we prefer 
+to take advantage of *layout rules* that use indentation to group and separate 
+code. 
 
-* In Haskell, once we bind a value to a variable, we can't change that
-  binding (though new bindings may shadow existing ones in containing
-  scopes -- e.g., local variables shadowing global ones)
+The "golden rule" for Haskell indentation is:
 
-* Bindings may be established using `=` or when we call functions with
-  parameters (which are bound to local variables)
+   Code which is part of some expression should be indented further in 
+   than the beginning of that expression.
 
-* Variable names must start with a lowercase letter
+In addition, all expressions that belong to the same group must be left-aligned
+to the same column. The "do", "let", "where", and "of" keywords indicate the
+start of group.
 
-> iAmAValidVariableName = 1
-> -- IAmNotAValidVariableName = 2
+> doGuessing num = do
+>   putStrLn "Enter your guess:"
+>   guess <- getLine
+>   case compare (read guess) num of
+>     LT -> do putStrLn "Too low!"
+>              doGuessing num
+>     GT -> do putStrLn "Too high!"
+>              doGuessing num
+>     EQ -> putStrLn "You Win!"
 
-* Other (potentially surprising) facts:
-
-  * The order of bindings in a Haskell program is not important
-
-  * The value of a binding is only evaluated when needed
-
-  * A symbol being bound is in scope with its own definition
-
-> w = x
-> x = w
-> y = y
-> z = error "Eek!"
-> u = undefined
+Read the [Haskell Wikibook](https://en.wikibooks.org/wiki/Haskell/Indentation)
+for a briefer on the layout rule, and the 
+[Haskell language report](https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-210002.7)
+for all the gory details.
