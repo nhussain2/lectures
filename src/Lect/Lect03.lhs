@@ -61,7 +61,7 @@ Some functions:
 
     not  :: Bool -> Bool
 
-    isDigit :: Int  -> Bool
+    isDigit :: Char -> Bool
 
 
 A function of multiple arguments can be implemented in different ways:
@@ -122,11 +122,11 @@ in infix form (e.g., `13 + 25`)
 
   - Operators can be used in prefix form if we place them in parentheses
 
+        (&&) True False
+
         (+) 13 25
 
         (^) 2 10
-
-        (&&) True False
 
   - Functions can be used in infix form if we place them in backticks (``)
 
