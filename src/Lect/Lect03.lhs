@@ -3,160 +3,209 @@
 % Michael Lee
 
 > module Lect.Lect03 where
+> import Data.Char
 
 Types and Typeclasses
 =====================
 
-Simple Types and Operations
----------------------------
 
-* Haskell has predefined types and operators (functions) for numbers, Booleans,
-  Chars, Strings, and lots more --- ["Prelude"][1] is the module that Haskell
-  imports by default into all programs which defines all the standard
-  types/functions
+Types
+-----
 
-* The type of every expression is known at compile time, so "badly-typed"
-  expressions are automatically reported (and don't compile!)
+A *type* defines a collection of values.
 
-* The `:type` (`:t`) and `:info` (`:i`) ghci commands let us inspect types
-  interactively
+  - `e :: T` means that expression `e` (when evaluated) has type `T`
 
-[1]: http://hackage.haskell.org/package/base-4.12.0.0/docs/Prelude.html
+  - all types start with a capital letter
 
-> a = 10
-> b = 2^1000 -- Integer type has unlimited precision
-> c = (True || False) && True
-> d = 1000 == 1001
-> e = 1000 /= 1001 -- note: weird not-equal-to
+  - the type of all values and expressions are either explicitly specified
+    or inferred at compile time
 
-* Operators are just functions whose names start with non-letters, and are
-  used in infix form (e.g., `+`)
+  - Haskell programs are type safe, i.e., there can never be type-related
+    errors at runtime
 
-  * Operators can be used in prefix form if we place them in parentheses
 
-* Functions are called in prefix form, where the function name precedes
-  arguments being passed to it --- parentheses are not needed (unless
-  explicitly controlling precedence or creating tuples)
-
-  * Functions can be used in infix form if we place them in backticks (``)
-
->
->
->
-
-* The type specification for a function looks like this:
-
-      type1 -> type2 -> ... -> typeN
-
-  * Note: `->` associates to the right (how to parenthesize the above?)
-
-  * This tells us that a function of *N* arguments can be viewed as a function
-    of *one* argument that returns a function of *N-1* arguments!
-
->
->
->
-
-Basic Types
+Basic types
 -----------
 
-- Bool    - True/False
-- Char    - Unicode character
-- Int     - 64 bit signed integer
-- Integer - arbitrary-precision integer
-- Float   - 32-bit IEEE single-precision floating point number
-- Double  - 64-bit IEEE double-precision floating point number
-- Tuple   - finite (i.e., of a given arity) sequence of different types
+  - Bool    - True/False
+  - Char    - Unicode character
+  - Int     - 64 bit signed integer
+  - Integer - arbitrary-precision integer
+  - Float   - 32-bit IEEE single-precision floating point number
+  - Double  - 64-bit IEEE double-precision floating point number
+  - Tuple   - finite (i.e., of a given arity) sequence of zero or more types
 
-Note, all types have capitalized names!
+At GHCi, we can use `:t` to ask for the type of any expression.
 
-Note: `:t` can be used to ask for the type of any expression
+What are the types of the following?
 
-< -- try out
-< :t True
-< :t False || True
-< :t 'a'
-< :t 5
-< :t sqrt 5
+    True
+    'a'
+    5
+    1.5
+    ('b', False, 'c')
+    ()
+    (True)
+    (1, 2, 3, True)
 
 
-Function Types
+Function types
 --------------
 
-A function is a mapping (->) from one type (the domain) to another type (the
-range).  
+A function is a mapping from one type (the domain) to another type (the range).
 
-< -- e.g.,
-< not  :: Bool -> Bool
-< even :: Int  -> Bool
+For a function that maps type T1 to type T2, we specify its type as `T1 -> T2`
 
-A function of multiple arguments can be implemented in one of two ways:
+Some functions:
 
-1. A function that takes a tuple of the requisite types
+    not  :: Bool -> Bool
 
-< foo :: (Int, Bool, Char) -> Int
-
-2. A *curried* function
-
-< foo :: Int -> Bool -> Char -> Int
-
-   Note: (->) associates right-to-left, so, equivalent to:
-
-< foo :: Int -> (Bool -> (Char -> Int))
-
-   I.e., foo is a function which takes an Int and
-         returns a function which takes a Bool ...
-
-   Function application (space) associates left-to-right, so:
-
-< foo 5 True 'a'
-
-   is equivalent to:
-
-< (((foo 5) True) 'a')
-
-Inspect the types of `id`, `const`, `fst`, and `snd`. Discuss.
+    isDigit :: Int  -> Bool
 
 
-Polymorphic Functions
+A function of multiple arguments can be implemented in different ways:
+
+  1. A function that takes a tuple of the requisite types, e.g.,
+
+         foo :: (Bool, Char) -> Int
+
+  2. Functions that return other functions, e.g.,
+
+         foo :: Bool -> (Char -> Int)
+
+     We interpret this type as a function which takes a `Bool` and returns
+     another function which takes a `Char` and returns an `Int`.
+
+     Here's a function of three `Int` arguments:
+
+         bar :: Int -> (Int -> (Int -> Int)) -- interpret this!
+
+     We call functions that take arguments one at a time like this "curried"
+     functions. This is the default in Haskell, so the `->` in type declarations
+     associates to the right, which means we can just write:
+
+         bar :: Int -> Int -> Int -> Int
+
+
+Function application
+--------------------
+
+Function application simply requires placing a space between a function name and
+its argument(s), e.g.,
+
+    not True
+
+    isDigit '9'
+
+
+Function application associates left-to-right, so 
+
+    foo 5 True 'a'
+
+is equivalent to:
+
+    (((foo 5) True) 'a')
+
+Note that this is in keeping with function currying --- each function
+application results in another function, that is then applied to an additional
+argument to obtain another function ...
+
+We will be making use of *partial function application* quite a bit!
+
+
+"Operators"
+-----------
+
+Operators are just functions whose names start with non-letters, and are used
+in infix form (e.g., `13 + 25`)
+
+  - Operators can be used in prefix form if we place them in parentheses
+
+        (+) 13 25
+
+        (^) 2 10
+
+        (&&) True False
+
+  - Functions can be used in infix form if we place them in backticks (``)
+
+        20 `mod` 3
+
+        36 `gcd` 27
+
+
+Polymorphic functions
 ---------------------
 
-In the type `a -> b`, `a` and `b` are *type variables*. Since they are
-unqualified, they can be replaced with any type! A function whose type
-declaration contains a type variable is a *polymorphic* function.
+Some functions are type-agnostic; i.e., they don't care about the types of some
+of their arguments. E.g., consider a function that takes a tuple and returns 
+the first element.
+
+Such functions are still well-typed, but their types change (morph) according to
+their specific argument types. We call these functional *polymorphic functions*,
+and their type declarations contain *type variables*.
+
+E.g., a function which takes a two-tuple and returns the first element has type:
+
+    fst :: (a, b) -> a
+
 
 Since an unqualified type variable says nothing about its actual type,
-you can't do much with it (why?)
+you can't do much with it the value of the corresponding argument.
 
-But this means the type of a polymorphic function is usually very helpful
-in determining what it does!
+But the type of a polymorphic function can actually be quite helpful in
+determining what it does!
 
-e.g., what do `id`, `const`, `fst`, `snd` do?
+e.g., what do `snd`, `id`, `const`, do, based on their types?
 
-Inspect the types of `==`, `+`, `show`, `read`
+e.g., try to decipher the types of `.` and `until`
 
 
-Overloaded Types and Type Classes
----------------------------------
+Type classes (aka Classes)
+--------------------------
 
-< (+) :: Num a => a -> a -> a
+Just as a type is a collection of related values, a type *class* is a collection
+of related types. A class defines functions (known as methods) that are 
+supported by all instances (i.e., types) of that class
 
-Above, `Num a` is a *class constraint*, implying that the actual type of
-type variable `a` must belong to the *type class* `Num`.
+Some common classes and their methods:
 
-A type that contains a class constraint is called *overloaded*.
+    class Eq a where
+      (==) :: a -> a -> Bool
+      (/=) :: a -> a -> Bool
 
-A *class* is a collection of types that support a set of overloaded
-functions called *methods*. Each type belonging to a given class is called
-an *instance* of that class.
+    class Show a where
+      show :: a -> String
 
-`:i` gives us information on both types and classes.
+    class Eq a => Ord a where
+      compare :: a -> a -> Ordering
+      (<) :: a -> a -> Bool
+      (<=) :: a -> a -> Bool
+      (>) :: a -> a -> Bool
+      (>=) :: a -> a -> Bool
+      max :: a -> a -> a
+      min :: a -> a -> a
 
-< -- try out
-< :i Int
-< :i Integral
-< :i Num
-< :i Eq
-< :i Ord
-< :i Show
-< :i Read
+    class Num a where
+      (+) :: a -> a -> a
+      (-) :: a -> a -> a
+      (*) :: a -> a -> a
+      negate :: a -> a
+      abs :: a -> a
+      signum :: a -> a
+      fromInteger :: Integer -> a
+
+
+Polymorphic functions can be *constrained* by including one or more 
+*class constraints* in the type declaration. 
+
+E.g., subtract is defined for all types which are instances of the `Num` class
+
+    subtract :: Num a => a -> a -> a
+
+
+Inspect the types of `^`, `read`, `length`.
+
+At GHCi, you can use the `:info` command to get more information about types,
+classes, methods, and class instances.
