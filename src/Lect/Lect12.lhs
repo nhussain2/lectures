@@ -1,205 +1,315 @@
 % CS 340: Programming Paradigms and Patterns
-% Lect 12 - Folds
+% Lect 12 - Search
 % Michael Lee
 
 > module Lect.Lect12 where
+> import Data.List
+> import Data.Maybe
+> import System.IO
+> import Debug.Trace
 
-Folds
-=====
+Search
+======
 
-Primitive Recursion
--------------------
+The search problem is one of the most common problems you'll encounter across
+various domains of computer science. Searching amounts to the problem of
+looking for information that matches some criteria in a collection of data.
+Different search algorithms and problem domains specify the way the data is
+collected, represented, and stored, and what the search criteria are.
 
-Let's start by implementing the following functions and looking for a pattern:
+A reasonably general start to our discussion of search is to consider
+how we might search for a value stored somewhere in an N-way tree.
 
-> sum' :: (Num a) => [a] -> a
-> sum' [] = 0
-> sum' (x:xs) = x + sum' xs
->
-> product' :: (Num a) => [a] -> a
-> product' [] = 1
-> product' (x:xs) = x * product' xs
->
-> and' :: [Bool] -> Bool
-> and' [] = True
-> and' (x:xs) = x && or' xs
->
-> or' :: [Bool] -> Bool
-> or' [] = False
-> or' (x:xs) = x || or' xs
+Here are some definitions we previously came up with for generating simple
+binary trees:
+
+> data Tree a = Node {
+>   rootVal :: a,
+>   forest :: [Tree a]
+> } deriving (Show)
 > 
-> stringify :: (Show a) => [a] -> String
-> stringify [] = ""
-> stringify (x:xs) = show x ++ stringify xs
+> instance Functor Tree where
+>   fmap f (Node x ts) = Node (f x) $ fmap (fmap f) ts
 
-Each of the above recursive functions has type `[a] -> b`, and is built around
-two basic pieces:
-
-1. a value (of type `b`) associated with the base case (the empty list)
-2. a function that takes a value from the list (of type `a`) and combines it with
-   the value returned by the recursive call (of type `b`) to compute the result
-   (also of type `b`)
-
-I.e., to express a recursive list function of type `[a] -> b`, we need:
-
-- a combining function with type `a -> b -> b`
-- a base case value of type `b`
-
-Let's design a HOF that encapsulates this notion of primitive list recursion:
-
-> recur :: (a -> b -> b) -> b -> [a] -> b
-> recur f z [] = z
-> recur f z (x:xs) = f x $ recur f z xs
-
-We call this function "fold" --- specifically, "fold right".
-
-
-Fold Right
-----------
-
-< foldr :: (a -> b -> b) -> b -> [a] -> b
-
-Note: foldr is actually defined for the "Foldable" type class --- the list is an
-instance of Foldable. We'll see how this works later!
-
-Intuitively, foldr applies the combiner function f to the last (i.e., rightmost)
-value in the list and the base value *first*, then works outwards, applying f
-to each list value and the result from the previous application of f, in turn.
-
-E.g., foldr f z [1..5] = (1 `f` (2 `f` (3 `f` (4 `f` (5 `f` z)))))
-
-                       = (f 1 (f 2 (f 3 (f 4 (f 5 z)))))
-
-Let's define the above recursive functions in terms of foldr:
-
-> sum'' :: (Num a) => [a] -> a
-> sum'' = foldr (+) 0
+> binTree :: Tree Integer
+> binTree = t 1
+>   where t n = Node n [t (2*n), t (2*n+1)]
 >
-> product'' :: (Num a) => [a] -> a
-> product'' = foldr (*) 1
+> pruneTree :: Int -> Tree a -> Tree a
+> pruneTree 1 (Node x _) = Node x []
+> pruneTree n (Node x f) = Node x $ map (pruneTree (n-1)) f
+
+What would our search function look like?
+
+> treeSearch :: (a -> Bool) -> ([Tree a] -> [Tree a] -> [Tree a])
+>   -> [Tree a] -> Bool
 >
-> or'' :: [Bool] -> Bool
-> or'' = foldr (||) False
+> treeSearch goal combiner [] = False
+> treeSearch goal combiner ((Node x forest):ns)
+>   | goal x = True
+>   | null forest = treeSearch goal combiner ns
+>   | otherwise = treeSearch goal combiner (combiner forest ns)
+
+> depthFirstSearch :: (a -> Bool) -> Tree a -> Bool
+> depthFirstSearch goal t = treeSearch goal (++) [t]
+
+> breadthFirstSearch :: (a -> Bool) -> Tree a -> Bool
+> breadthFirstSearch goal t = treeSearch goal (flip (++)) [t]
+
+> data Maze = Maze Int Int String deriving Show
+> type MazeLoc = (Int,Int)
+>
+> maze1 = Maze 4 3 "####\
+>                  \    \
+>                  \####" -- exit (3,1)
+>
+> maze2 = Maze 5 6 "#####\
+>                  \    #\
+>                  \# # #\
+>                  \# # #\
+>                  \# #  \
+>                  \#####" -- exit (4,4)
 > 
-> and'' :: [Bool] -> Bool
-> and'' = foldr (&&) True
+> maze3 = Maze 17 7 "#################\
+>                   \  #       #     #\
+>                   \# ##### # # # # #\
+>                   \#     # # # # # #\
+>                   \# ### ### # # ###\
+>                   \#   #       #    \
+>                   \#################" -- exit (16,5)
+>
+> maze4 = Maze 17 7 "#################\
+>                   \                #\
+>                   \# # # # # # # # #\
+>                   \# # # # # # # # #\
+>                   \# ###############\
+>                   \#                \
+>                   \#################" -- exit (16,5)
+>
+> maze5 = Maze 16 9 "################\
+>                   \               #\
+>                   \### ########## #\
+>                   \#   #          #\
+>                   \# ### ##########\
+>                   \# ###          #\
+>                   \# ############ #\
+>                   \#               \
+>                   \################" -- exit (15,7)
+>
+> mazeChar :: Maze -> MazeLoc -> Char
+> mazeChar (Maze w h s) (x,y) = s !! (w*y + x)
+>
+> mazeMoves :: Maze -> MazeLoc -> [(Int,Int)]
+> mazeMoves m@(Maze w h s) (x,y)
+>   | mazeChar m (x,y) == ' ' = [(x+dx,y+dy)
+>                               | dx <- [-1,0,1], dy <- [-1,0,1],
+>                                 (dx == 0 && dy /= 0) || (dx /= 0 && dy == 0),
+>                                 x+dx >= 0 && x+dx < w,
+>                                 y+dy >= 0 && y+dy < h,
+>                                 mazeChar m ((x+dx),(y+dy)) == ' ']
+>   | otherwise = []
+>
+> mazeVisit :: Maze -> MazeLoc -> Maze
+> mazeVisit m@(Maze w h s) (x,y) = let offset = w*y + x
+>                                  in Maze w h $ (take offset s)
+>                                     ++ "X"
+>                                     ++ (drop (offset+1) s)
 > 
-> stringify' :: (Show a) => [a] -> String
-> stringify' = foldr ((++) . show) ""
-
-Try a few others:
-
-> (+++) :: [a] -> [a] -> [a]
-> l1 +++ l2 = foldr (:) l2 l1
+> search :: (Eq a, Show a) => (a -> Bool) -> (a -> [a]) -> ([a] -> [a] -> [a])
+>   -> [a] -> [a] -> Maybe a
+> search goal succ comb nodes oldNodes
+>   | null nodes = Nothing
+>   | goal (head nodes) = Just (head nodes)
+>   | otherwise = let (n:ns) = nodes
+>                 in traceShow (n,nodes) $ search goal succ comb
+>                    (comb (removeDups (succ n)) ns)
+>                    (adjoin n oldNodes)
+>   where removeDups = filter (not . ((flip elem) (nodes ++ oldNodes)))
+>         adjoin x lst = if elem x lst then lst else x:lst
 >
-> length' :: [a] -> Int
-> length' = foldr (\_ r -> succ r) 0
-
-And higher order functions:
-
-> map' :: (a -> b) -> [a] -> [b]
-> map' f = foldr ((:) . f) []
+> dfs :: (Eq a, Show a) => (a -> Bool) -> (a -> [a]) -> a -> Maybe a
+> dfs goal succ start = search goal succ (++) [start] []
 >
-> filter' :: (a -> Bool) -> [a] -> [a]
-> filter' f = foldr iter []
->   where iter x rst | f x = x : rst
->                    | otherwise = rst
+> bfs :: (Eq a, Show a) => (a -> Bool) -> (a -> [a]) -> a -> Maybe a
+> bfs goal succ start = search goal succ (flip (++)) [start] []
 
-How about reverse?
+> mazeSearch :: Maze -> MazeLoc -> MazeLoc -> Bool
+> mazeSearch m inloc outloc =
+>   case dfs (== outloc) (mazeMoves m) inloc
+>   -- case bfs (== outloc) (mazeMoves m) inloc
+>   -- case bestFirstSearch (== outloc) (mazeMoves m) (mazeDist outloc) inloc
+>   of Nothing -> False
+>      otherwise -> True
 
-> reverse' :: [a] -> [a]
-> reverse' [] = []
-> reverse' (x:xs) = reverse' xs ++ [x]
+> bestFirstSearch :: (Eq a, Show a, Ord b) => (a -> Bool) -> (a -> [a])
+>                 -> (a -> b) -> a -> Maybe a
+> bestFirstSearch goal succ score start = search goal succ comb [start] []
+>   where comb new old = sortOn score (new ++ old)
 
-Which translates into:
+> mazeDist :: MazeLoc -> MazeLoc -> Double
+> mazeDist (x1,y1) (x2,y2) = sqrt $ fromIntegral $ (x1-x2)^2 + (y1-y2)^2
 
-> reverse'' :: [a] -> [a]
-> reverse'' = foldr (flip (++) . (:[])) []
+> data MazePath = MazePath [MazeLoc] deriving Eq
+>
+> instance Show MazePath where
+>   show (MazePath p) = show (length p) ++ "<" ++ show (reverse p) ++ ">"
+>
+> mazePathSearch :: Maze -> MazeLoc -> MazeLoc -> Maybe MazePath
+> mazePathSearch m inloc outloc =
+>   bestFirstSearch (\(MazePath (l:_)) -> l == outloc)
+>                   nextPaths scorePath $ MazePath [inloc]
+>   where nextPaths (MazePath p@(l:_)) = map (\nl -> MazePath $ nl:p)
+>                                        $ filter (not . (flip elem) p)
+>                                        $ mazeMoves m l
+>         scorePath (MazePath p@(l:_)) = mazeDist l outloc
+>                                        + fromIntegral (length p)
 
-But this is inefficient! (Why?)
+Minimax
+-------
 
-A better implementation of reverse is:
+> data Piece = X | O deriving (Eq, Show, Read)
+> data Board = Board {
+>   squares :: [Maybe Piece]
+>   } deriving (Eq)
+> 
+> instance Show (Board) where
+>   show (Board ps) = intercalate "\n"
+>                     $ map (foldr1 (++))
+>                     $ chunksOf 3
+>                     $ map showSquare ps
+>     where showSquare Nothing = "~"
+>           showSquare (Just p) = show p
+> 
+> emptyBoard :: Board
+> emptyBoard = Board $ replicate 9 Nothing
+> 
+> readBoard :: String -> Board
+> readBoard = Board . (map f)
+>   where f '~' = Nothing
+>         f p = Just $ read [p]
+> 
+> -- e.g., readBoard "O~~~X~~~~"        
+> 
+> chunksOf :: Int -> [a] -> [[a]]
+> chunksOf _ [] = []
+> chunksOf n l = take n l : chunksOf n (drop n l)
+> 
+> -- e.g., chunksOf 3 "123456789"
+> 
+> placePiece :: Int -> Piece -> Board -> Board
+> placePiece n p b = let (pre,_:post) = splitAt n $ squares b
+>                    in Board $ pre ++ [Just p] ++ post
+> 
+> -- e.g., placePiece 1 O $ placePiece 0 X emptyBoard
+> 
+> allEqual :: (Eq a) => [a] -> Bool
+> allEqual [] = True
+> allEqual (x:xs) = all (== x) xs
+>                 
+> winner :: Board -> Maybe Piece
+> winner b = let sqs = squares b
+>                rows = filter (all (/= Nothing)) $ chunksOf 3 sqs
+>                cols = filter (all (/= Nothing)) $ transpose $ chunksOf 3 sqs
+>                diags = filter (all (/= Nothing))
+>                        $ map (map (sqs !!)) [[0,4,8],[2,4,6]]
+>                winning = find allEqual $ rows ++ cols ++ diags
+>            in case winning of Nothing -> Nothing
+>                               Just (p:ps) -> p
+> 
+> won :: Board -> Bool
+> won b = not $ isNothing $ winner b
+> 
+> drawn :: Board -> Bool
+> drawn b = all (/= Nothing) (squares b) && not (won b)
+> 
+> opponent :: Piece -> Piece
+> opponent O = X
+> opponent X = O
+> 
+> -- building up the idea of analyzing board position to compute a numeric score
+> 
+> data Scored a = Scored Int a deriving (Show)
+> 
+> instance Eq (Scored a) where
+>   (Scored x _) == (Scored y _) = x == y
+> 
+> instance Ord (Scored a) where
+>   compare (Scored x _) (Scored y _) = compare x y
+> 
+> fromScored :: Scored a -> a
+> fromScored (Scored _ x) = x
+> 
+> scoredBoard :: Piece -> Board -> Scored Board
+> scoredBoard p b
+>   | winner b == Just p = Scored 100 b
+>   | winner b == Just (opponent p) = Scored (-100) b
+>   | drawn b = Scored 0 b
+>   | otherwise = Scored waysToWin b
+>   where waysToWin = let opp = opponent p
+>                         sqs = squares b
+>                         rows = filter (all (/= Just opp)) $ chunksOf 3 sqs
+>                         cols = filter (all (/= Just opp))
+>                                $ transpose $ chunksOf 3 sqs
+>                         diags = filter (all (/= Just opp))
+>                                 $ map (map (sqs !!)) [[0,4,8],[2,4,6]]
+>                     in length $ filter (any (== Just p)) $ rows ++ cols ++ diags
+>     
+> turn :: Board -> Piece
+> turn b = let xs = length $ filter (== Just X) $ squares b
+>              os = length $ filter (== Just O) $ squares b
+>          in if xs <= os then X else O
+> 
+> boardSuccs :: Board -> [Board]
+> boardSuccs b
+>   | won b || drawn b = []
+>   | otherwise = let t = turn b
+>                 in map (\i -> placePiece i t b)
+>                    $ findIndices isNothing $ squares b
+> 
+> -- e.g., boardSuccs $ readBoard "~~~~X~~~~"
+> -- e.g., boardSuccs $ readBoard "O~~~X~~~~"
+> -- (may want to first remove newlines from show fn before the next example.)
+> -- e.g., map (scoredBoard X) $ boardSuccs $ readBoard "OOX~X~~~~" 
+> -- e.g., maximumBy (comparing $ scoredBoard X)
+> --                 $ boardSuccs $ readBoard "OOX~X~~~~"
+> 
+> nextBestBoard :: Board -> Maybe Board
+> nextBestBoard b
+>   | null succs = Nothing
+>   | otherwise = Just $ fromScored $ maximum $ map (scoredBoard (turn b)) succs
+>   where succs = boardSuccs b
+> 
+> autoplay :: [Board]
+> autoplay = emptyBoard : next autoplay
+>   where next (b:bs) = let mb = nextBestBoard b
+>                       in case mb of Nothing -> []
+>                                     Just b' -> b' : next bs
+> 
+> -- note: note the best play! (only immediate wins are taken automatically --
+> --       good/bad plays further down the road do not inform play)
+> 
+> playGame :: (Board -> Maybe Board) -> Board -> IO ()
+> playGame strategy b
+>   | won b = putStrLn $ show (opponent t) ++ " won!"
+>   | drawn b = putStrLn "Draw game!"
+>   | t == X = do
+>       putStr $ "Enter move for X: "
+>       hFlush stdout
+>       i <- readLn
+>       if isNothing $ (squares b) !! i
+>         then do
+>           let b' = placePiece i t b
+>           print b'
+>           putStrLn ""
+>           playGame strategy b'
+>         else do
+>           putStrLn "Invalid move"
+>           playGame strategy b
+>   | otherwise = do
+>       let Just b' = strategy b
+>       putStrLn "Computer moves:"
+>       print b'
+>       putStrLn ""
+>       playGame strategy b'
+>   where t = turn b
 
-> reverse''' :: [a] -> [a]
-> reverse''' xs = recur [] xs
->   where recur ys [] = ys
->         recur ys (x:xs) = recur (x:ys) xs
-
-Note how the result (`ys`) computed by `recur` is built up (aka "accumulated")
-from left to right over the input list. It is difficult (but not impossible!)
-to implement `reverse'''` in terms of foldr.
-  
-
-Fold Left
----------
-
-In a left fold, we want to start by applying the combiner function to the base
-value and the first value in the list, then proceed onto succeeding values, so:
-
-foldl f z [1..5] = (((((z `f` 1) `f` 2) `f` 3) `f` 4) `f` 5)
-
-                 = (f (f (f (f (f z 1) 2) 3) 4) 5)
-
-Determine the type of the left fold function and implement it:
-
-> foldl' :: (b -> a -> b) -> b -> [a] -> b
-> foldl' _ z [] = z
-> foldl' f z (x:xs) = foldl' f (f z x) xs
-
-Define reverse using foldl:
-
-> reverse'''' :: [a] -> [a]
-> reverse'''' = foldl (flip (:)) []
-
-
-On Infinite Lists
------------------
-
-Which folds (if any) work with infinite lists?
-
-Try:
-
-< take 10 $ foldr (:) [] [1..]
-< foldr (||) False $ map even [1..]
-< foldl (||) False $ map even [1..]
-
-Why?
-
-Intuitively:
-- foldr's combining function is applied to each element in turn (and to the
-  recursive call) --- this lets the combining function "short circuit" early
-- foldl builds up an accumulated value; the result is not known until all
-  recursions are evaluated
-- foldl must recurse through the entire list to build up all the function
-  applications before evaluating the *outermost* one
-
-
-Which Fold?
------------
-
-- foldl is *left associative*
-- foldr is *right associative*
-- foldr can work with infinite lists!
-
-consider:
-
-> foldl1' :: (a -> a -> a) -> [a] -> a
-> foldl1' f (x:xs) = foldl f x xs
-
-> foldr1' :: (a -> a -> a) -> [a] -> a
-> foldr1' f [x] = x
-> foldr1' f (x:xs) = f x $ foldr1' f xs
-
-Following are true:
-
-< foldl1 (+) [1..10] == foldr1 (+) [1..10]
-< foldl1 (*) [1..10] == foldr1 (*) [1..10]
-
-But following are not:
-
-< foldl1 (-) [10, 2, 1, 3] == foldr1 (-) [10, 2, 1, 3]
-< foldl1 (^) [2, 3, 4] == foldr1 (^) [2, 3, 4]
-
-`-` is left associative, and so should be evaluated using the left-fold.
-
-`^` is right associative, and should be evaluated using the right-fold.

@@ -1,200 +1,90 @@
 % CS 340: Programming Paradigms and Patterns
-% Lect 10 - Higher order functions
+% Lect 10 - Recursive types
 % Michael Lee
 
 > module Lect.Lect10 where
 
-Higher order functions
-======================
+Recursive types
+===============
 
-Agenda:
-  - Lambda expressions
-  - Operator sections
-  - HOFs
-  - Composition & Application
-  - Mapping as iteration
-  - Filtering
-  - Generalized "zipping"
-  - Miscellaneous HOFs
+Lists
+-----
 
-
-Lambda expressions
-------------------
-
-
-Operator sections
------------------
-
-
-HOFs
-----  
-
-A higher-order function is a function that takes one or more functions as
-parameters or returns a function. ("Regular" functions are called first-order
-functions).
-
-HOFs enable us to create higher-level abstractions, and are a fundamental
-tool in functional programming.
-
-Note: due to currying, *all functions of 2 or more arguments* are HOFs!
-
-
-Composition & Application
--------------------------
-
-< (.) :: (b -> c) -> (a -> b) -> a -> c
-< ($) :: (a -> b) -> a -> b
-
-(.) succinctly expresses the layering of two or more functions:
-
-< (sqrt . sin) 1
-< (take 10 . repeat) 5
-
-( .) often encourages "point-free" (i.e., argument-less) function definitions:
-
-> even' :: Integral a => a -> Bool
-> even' = (== 0) . (`rem` 2)
+> data List a = Cons a (List a) | Empty deriving Show
 >
-> label :: Show a => a -> String
-> label = ("Val = " ++) . show
+> head' :: List a -> a
+> head' Empty = error "Empty list"
+> head' (Cons x _) = x
 >
-> k2c k = k - 273
-> c2f c = c * 9 / 5 + 32
-> f2h f
->   | f < 0 = "too cold"
->   | f > 100 = "too hot"
->   | otherwise = "survivable"
+> tail' :: List a -> List a
+> tail' Empty = error "Empty list"
+> tail' (Cons _ xs) = xs
 >
-> k2h = f2h . c2f . k2c
-
-($) is typically used to minimize parentheses:
-
-< show (abs (2 - 5))
-< show $ abs $ 2 - 5
-<
-< take 5 (drop 10 (zip [1..] (repeat 'a')))
-< take 5 $ drop 10 $ zip [1..] $ repeat 'a'
-
-Define (.) and ($) ourselves:
-
-> comp :: (b -> c) -> (a -> b) -> a -> c
-> f `comp` g = \x -> f (g x)
+> takel :: Int -> List a -> List a
+> takel 0 _ = Empty
+> takel n (Cons x xs) = Cons x $ takel (n-1) xs
 >
-> app :: (a -> b) -> a -> b
-> infixr 0 `app` -- force low precedence right-associativity
-> f `app` x = f x
+> repeatl :: a -> List a
+> repeatl x = Cons x $ repeatl x
+>
+> mapl :: (a -> b) -> List a -> List b
+> mapl _ Empty = Empty
+> mapl f (Cons x xs) = Cons (f x) (mapl f xs)
+>
+> foldrl :: (a -> b -> b) -> b -> List a -> b
+> foldrl f z Empty = z
+> foldrl f z (Cons x xs) = f x $ foldrl f z xs
+>
+> suml :: Num a => List a -> a
+> suml = foldrl (+) 0 
 
 
-Mapping as "Iteration"
-----------------------
+Binary Trees
+------------
 
-< map :: (a -> b) -> [a] -> [b]
-
-`map` applies a function to each item of a list, returning the new list.
-
-Try out:
-
-< map even [1..10]
-< map reverse $ words "madam I refer to adam"
-< map (^2) [1..10]
-< map (\x->(x,x^2)) [1..10]
-< map (++) $ words "on over under across" -- what does this do?
-< map (\f -> f " the table") $ map (++) (words "on over under across")
-< map (map (*2)) [[1..5], [6..10], [11..15]]
-
-Define map ourselves:
-
-> map' :: (a -> b) -> [a] -> [b]
-> map' _ [] = []
-> map' f (x:xs) = f x : map' f xs
-
-
-Filtering
----------
-
-< filter :: (a -> Bool) -> [a] -> [a]
-
-`filter` is another typical HOF. `filter` only keeps values in a list that pass
-a given predicate (a function that returns True/False).
-
-Try out:
-
-< filter even [1..10]
-< filter (\(a,b,c) -> a^2+b^2==c^2) [(a,b,c) | a<-[1..10], b<-[a..10], c<-[b..10]]
-< filter (\s -> reverse s == s) $ words "madam I refer to adam"
-< map (\w -> (w,length w)) $ filter (\s -> reverse s == s) $ words "madam I refer to adam"
-  
-Define filter ourselves:
-
-> filter' :: (a -> Bool) -> [a] -> [a]
-> filter' _ [] = []
-> filter' p (x:xs) | p x = x : filter' p xs
->                  | otherwise = filter' p xs
+> data BinTree a = Node (BinTree a) a (BinTree a) | Leaf a
+>   deriving Show
+>
+> eTree :: BinTree Char
+> eTree = Node (Node (Leaf '3') '+' (Leaf '5')) '*' (Leaf '9')
+>
+> treeElem :: Eq a => a -> BinTree a -> Bool
+> treeElem x (Leaf y) = x == y
+> treeElem x (Node l y r) = x == y || treeElem x l || treeElem x r
+>
+> flatten :: BinTree a -> [a]
+> flatten (Leaf x) = [x]
+> flatten (Node l x r) = flatten l ++ [x] ++ flatten r
+>
+> infTree :: BinTree Integer
+> infTree = t 1
+>   where t n = Node (t (n*2)) n (t (n*2+1))
+>
+> prune :: Int -> BinTree a -> BinTree a
+> prune 1 (Node _ x _) = Leaf x
+> prune n (Node l x r) = Node (prune (n-1) l) x (prune (n-1) r)
+>
+> mapT :: (a -> b) -> BinTree a -> BinTree b
+> mapT f (Leaf x) = Leaf $ f x
+> mapT f (Node l x r) = Node (mapT f l) (f x) (mapT f r)
+>
+> foldrT :: (a -> b -> b) -> b -> BinTree a -> b
+> foldrT f b (Leaf x) = f x b
+> foldrT f b (Node l x r) = let b' = foldrT f b r
+>                               b'' = f x b'
+>                           in foldrT f b'' l
 
 
-Generalized "Zipping"
-_____________________
+N-way Trees
+-----------
 
-< zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
-< zipWith3 :: (a -> b -> c -> d) -> [a] -> [b] -> [c] -> [d]
-< zipWith4 ...
+> data Tree a = T a [Tree a] deriving Show
+>
+> infTree' :: Tree Integer
+> infTree' = t 1
+>   where t n = T n [t (n*2), t (n*2+1)]
+>
+> prune' :: Int -> Tree a -> Tree a
+> prune' 1 (T x _) = T x []
+> prune' n (T x ts) = T x $ map (prune' (n-1)) ts
 
-`zipWith` abstracts the zipping function (which, in zip, is just `(,)`)
-
-Try out:
-
-< zipWith (,) [1..5] [6..10]
-< zipWith (+) [1..5] [10,9..6]
-< zipWith (\x y -> x ++ ":" ++ show y) ["a", "b", "c"] [1..3]
-< zipWith3 (,,) [1..5] [10,20..50] [100,200..500]
-
-Yet another fibonacci definition!
-
-> fibonacci = 0 : 1 : zipWith (+) fibonacci (tail fibonacci)
-
-Define zipWith ourselves:
-
-> zipWith' :: (a -> b -> c) -> [a] -> [b] -> [c]
-> zipWith' _ [] _ = []
-> zipWith' _ _ [] = []
-> zipWith' f (x:xs) (y:ys) = f x y : zipWith' f xs ys
-
-
-Misc. HOFs
-----------
-
-< iterate :: (a -> a) -> a -> [a]
-< until :: (a -> Bool) -> (a -> a) -> a -> a
-< takeWhile :: (a -> Bool) -> [a] -> [a]
-
-Try out:
-
-< iterate (*2) 1
-< iterate (++".") ""
-
-Using `until`, implement Newton's method for finding square roots:
-
-1. Start with some guess g as the root of x
-2. Check if g^2 is close enough to x; if so, we're done
-3. Compute an improved guess by averaging g and x/g and repeat 2
-
-> newtonsSqrt :: (Floating a, Ord a) => a -> a
-> newtonsSqrt x = until check improve 1
->   where check g = abs (g^2 - x) < 0.00001
->         improve g = (g + x/g) / 2
-
-Try out:
-
-< takeWhile (\g -> abs (g^2-100) >= 0.000001) $ iterate (\g -> (g+100/g)/2) 1
-
-More list HOFs (import Data.List to try):
-
-< sortOn :: Ord b => (a -> b) -> [a] -> [a]
-< find :: (a -> Bool) -> [a] -> Maybe a
-< partition :: (a -> Bool) -> [a] -> ([a], [a])
-
-Try out:
-
-< sortOn length $ words "what is the correct order?"
-< find (\s -> reverse s == s) $ words "where is the civic center?"
-< partition even [1..10]

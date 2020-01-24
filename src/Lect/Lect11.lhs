@@ -1,8 +1,8 @@
 % CS 340: Programming Paradigms and Patterns
-% Lect 19 - Impurity and I/O
+% Lect 11 - Impurity and I/O
 % Michael Lee
 
-> module Lect.Lect19 where
+> module Lect.Lect11 where
 
 Impurity and I/O
 ================

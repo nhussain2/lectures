@@ -1,158 +1,222 @@
 % CS 340: Programming Paradigms and Patterns
-% Lect 02 - Introduction to Haskell
+% Lect 02 - Types and Typeclasses
 % Michael Lee
 
 > module Lect.Lect02 where
-> import Data.List
+> import Data.Char
 
-Introduction to Haskell
-=======================
+Types and Typeclasses
+=====================
 
 Agenda:
-  - working with literate source files
-  - general development workflow and tools
-  - notable (& maybe surprising) language features
-  - indentation and layout rules
+  - Types
+  - Basic Types
+  - Function types
+  - Function application
+  - "Operators"
+  - Polymorphic functions
+  - Type classes
 
 
-Literate Haskell
-----------------
+Types
+-----
 
-Regular Haskell source code filenames end in ".hs" --- all your assignments
-will use this extension --- but they can also end in ".lhs", which denotes a
-"literate" Haskell source file. In a literate source file, all text defaults
-to being a comment; lines of source code must start with the ">" character,
-and must also be separated from other text by at least one empty line.
+A *type* defines a collection of values.
 
-All lecture notes will be provided as literate source files. Here's what code
-would look like in a literate source file:
+  - `e :: T` means that expression `e` (when evaluated) has type `T`
 
-> welcome = putStrLn "Welcome to CS 340!"
+  - all type names start with a capital letter
+
+Haskell has a small number of builtin types, and the "Prelude" module (which is
+imported by default into all Haskell source files) defines other standard types.
 
 
-Development workflow and tools
-------------------------------
+Basic types
+-----------
 
-You'll need to switch frequently between multiple tools and platforms to
-do your work in this class. They include:
+  - Bool    - True/False
+  - Char    - Unicode character
+  - Int     - 64 bit signed integer
+  - Integer - arbitrary-precision integer
+  - Float   - 32-bit IEEE single-precision floating point number
+  - Double  - 64-bit IEEE double-precision floating point number
+  - Tuple   - finite (i.e., of a given arity) sequence of zero or more types
 
-- Git, a version control system
+(At GHCi, we can use `:t` to ask for the type of any expression.)
 
-- Bitbucket, a Git hosting service
+What are the types of the following?
 
-- Stack, a tool you'll use to install the Haskell compiler and libraries,
-  and compile and test your code
-
-- a source code editor with Haskell support --- I recommend Visual Studio Code
-  with the Haskelly plugin unless you strongly prefer a different editor and
-  are willing to figure out how to set it up on your own
-
-Screencast demonstrating the tools above at https://youtu.be/JUIFbKOoCSA
-
-
-Notable (& maybe surprising) language features
-----------------------------------------------
-
-1. Strong static typing: Every expression or variable has a type associated with
-                         it that doesn't change, and is rigidly enforced by the
-                         compiler. Haskel programs are type-safe; i.e., there
-                         will never be run-time type related errors!
+    True
+    'a'
+    5
+    1.5
+    ('b', False, 'c')
+    ()
+    (True)
+    (1, 2, 3, True)
 
 
-2. Type inference: The compiler can figure out the types of many things, so that
-                   we don't have to expliclty label them.
+Function types
+--------------
 
-> -- use the :t GHCi command to get the type of each of the below
->
-> mysteryVar1 = 123 `mod` 8
->
-> mysteryVar2 = words "hello how are you?"
-> 
-> mysteryFn1 = (^2)
->
-> mysteryFn2 = length . words
-> 
-> mysteryFn3 f s = [(abs $ f $ length w, w) | w <- words s]
+A function is a mapping from one type (the domain) to another type (the range).
+
+For a function that maps type T1 to type T2, we specify its type as `T1 -> T2`
+
+Some functions:
+
+    not  :: Bool -> Bool
+
+    isDigit :: Char -> Bool
 
 
-3. Purely functional: Once variables are bound to values they cannot be changed
-                      (i.e., variables are immutable).
+A function of multiple arguments can be implemented in different ways:
 
-> boundVar = 10
-> -- boundVar = 20 -- error!
- 
+  1. A function that takes a tuple of the requisite types, e.g.,
 
-4. Lazy evaluation: Computations are not performed (e.g., function evaluations)
-                    until they are strictly needed.
+         foo :: (Bool, Char) -> Int
 
-> possiblyTragic c = let e = error "Eeek!"
->                        u = undefined
->                    in case c of 'e' -> e
->                                 'u' -> u
->                                 otherwise -> "safe"
->
-> safeDiv x y = let q = x `div` y
->               in if y == 0
->                  then 0
->                  else q
+  2. Functions that return other functions, e.g.,
 
+         foo :: Bool -> (Char -> Int)
 
-5 . Order-independence: The order bindings appear in code doesn't matter.
+     We interpret this type as a function which takes a `Bool` and returns
+     another function which takes a `Char` and returns an `Int`.
 
-> w = x + 2
-> x = w - 5
->
-> evenN 0 = True
-> evenN n = oddN (n-1)
->
-> oddN 0 = False
-> oddN n = evenN (n-1)
+     Here's a function of three `Int` arguments:
+
+         bar :: Int -> (Int -> (Int -> Int))
+
+     We call functions that take arguments one at a time like this "curried"
+     functions. This is the default in Haskell, so the `->` in type declarations
+     associates to the right, which means we can just write:
+
+         bar :: Int -> Int -> Int -> Int
 
 
-6. Concise
+Function application
+--------------------
 
-   - Small language with few keywords:
+Function application simply requires placing a space between a function name and
+its argument(s), e.g.,
 
-       case  class  data   deriving  do   else  if
-       import  in  infix  infixl  infixr  instance
-       let  module  newtype  of  then  type  where
+    not True
 
-   - Declarative vs. Imperative style!
-
-> palindromes = sortOn snd
->               . map (\w -> (w,length w))
->               . filter (\s -> reverse s == s)
->               . words 
+    isDigit '9'
 
 
-Indentation & Layout rules
+Function application associates left-to-right, so 
+
+    foo 5 True 'a'
+
+is equivalent to:
+
+    (((foo 5) True) 'a')
+
+Note that this is in keeping with function currying --- each function
+application results in another function, that is then applied to an additional
+argument to obtain another function ...
+
+We will be making use of *partial function application* quite a bit!
+
+
+"Operators"
+-----------
+
+Operators are just functions whose names start with non-letters, and are used
+in infix form (e.g., `13 + 25`)
+
+  - Operators can be used in prefix form if we place them in parentheses
+
+        (&&) True False
+
+        (+) 13 25
+
+        (^) 2 10
+
+  - Functions can be used in infix form if we place them in backticks (``)
+
+        20 `mod` 3
+
+        36 `gcd` 27
+
+
+Polymorphic functions
+---------------------
+
+Some functions are type-agnostic; i.e., they don't care about the types of some
+of their arguments. E.g., consider a function that takes a tuple and returns 
+the first element.
+
+Such functions are still well-typed, but their types change (morph) according to
+their specific argument types. We call these functional *polymorphic functions*,
+and their type declarations contain *type variables*.
+
+E.g., a function which takes a two-tuple and returns the first element has type:
+
+    fst :: (a, b) -> a
+
+
+Since an unqualified type variable says nothing about its actual type, you can't
+do much with the value of the corresponding argument.
+
+But the type of a polymorphic function can actually be quite helpful in
+determining what it does!
+
+e.g., what do `snd`, `id`, `const`, do, based on their types?
+
+e.g., try to decipher the types of `.` and `until`
+
+
+Type classes (aka Classes)
 --------------------------
 
-Haskell supports the use of semicolons and curly braces for delineating
-and separating blocks of code, but they are rarely used. Instead, we prefer 
-to take advantage of *layout rules* that use indentation to group and separate 
-code. 
+Just as a type is a collection of related values, a type *class* is a collection
+of related types. A class defines functions (known as methods) that are 
+supported by all instances (i.e., types) of that class
 
-The "golden rule" for Haskell indentation is:
+Some common classes, their methods, and instances:
 
-   Code which is part of some expression should be indented further in 
-   than the beginning of that expression.
+    class Eq a where
+      (==) :: a -> a -> Bool
+      (/=) :: a -> a -> Bool
 
-In addition, all expressions that belong to the same group must be left-aligned
-to the same column. The "do", "let", "where", and "of" keywords indicate the
-start of group.
+      instances: Int, Integer, Float, Double, Char, Bool
 
-> doGuessing num = do
->   putStrLn "Enter your guess:"
->   guess <- getLine
->   case compare (read guess) num of
->     LT -> do putStrLn "Too low!"
->              doGuessing num
->     GT -> do putStrLn "Too high!"
->              doGuessing num
->     EQ -> putStrLn "You Win!"
 
-Read the [Haskell Wikibook](https://en.wikibooks.org/wiki/Haskell/Indentation)
-for a briefer on the layout rule, and the 
-[Haskell language report](https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-210002.7)
-for all the gory details.
+    class Ord a where
+      compare :: a -> a -> Ordering
+      (<) :: a -> a -> Bool
+      (<=) :: a -> a -> Bool
+      (>) :: a -> a -> Bool
+      (>=) :: a -> a -> Bool
+      max :: a -> a -> a
+      min :: a -> a -> a
+
+      instances: Int, Integer, Float, Double, Char, Bool
+
+
+    class Num a where
+      (+) :: a -> a -> a
+      (-) :: a -> a -> a
+      (*) :: a -> a -> a
+      negate :: a -> a
+      abs :: a -> a
+      signum :: a -> a
+      fromInteger :: Integer -> a
+
+      instances: Int, Integer, Float, Double
+
+
+Polymorphic function type declarations can also include *class constraints*, 
+which indicate that constrained type variables must be instances of specific 
+classes.
+
+E.g., the following type declaration says that type variable `a` must be an
+instance of the `Num` class:
+
+    subtract :: Num a => a -> a -> a
+
+
+Inspect the types of `^`, `show`, `read`, `length`. (At GHCi, you can use `:i` 
+to get more information about types, classes, methods, and class instances.)

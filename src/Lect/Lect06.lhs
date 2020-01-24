@@ -1,138 +1,140 @@
 % CS 340: Programming Paradigms and Patterns
-% Lect 06 - Lists
+% Lect 06 - Recursion
 % Michael Lee
 
 > module Lect.Lect06 where
 
-Lists
-=====
+Recursion
+=========
 
-Agenda
+Designing recursive functions
+-----------------------------
 
-- On data structures and immutability
-- Lists and list operations
-- List comprehensions
-- Defining functions on lists: pattern matching & recursion
-
-  
-On data structures and immutability
------------------------------------
-
-Most languages have built-in *aggregate* types -- i.e., data structures -- used
-to store, access, and manipulate collections of values. The most common data
-structure used in imperative languages is the *array*.
-
-An *array* is a fixed-size structure made up of "slots", each of which can hold
-an element.  Depending on the implementation, the elements in an array may be
-*homogeneous* (all of the same type) or *heterogeneous* (of different
-types). Arrays also typically support *indexing* for both retrieval and
-updates.
-
-E.g.,
-
-< int[] arr = new int[100];
-< for (int i=0; i<arr.length; i++)
-<     arr[i] = 0;
-
-But remember, in a functional language, in-place mutations are *not possible!*
-
-So how might an operation like `arr[N] = X` be carried out?
-
-...
-
-If arrays existed in Haskell, "updating" an index would require making a new
-copy of the entire array except for the value at that index (which would be
-different from the original). Also, empty "slots" would be pointless, as we
-couldn't actually "place" elements there --- they would only be useful if they
-served a semantic purpose.
-
-Arrays are *not* part of the standard Haskell repertoire. Instead, we have
-*lists*.
+Step 1: determine the type
+Step 2: list all the patterns
+Step 3: define the trivial cases
+Step 4: define the hard cases
+Step 5: generalize and simplify
 
 
-Lists and list operations
--------------------------
-
-`:` operator is used for list construction. (It is an example of a
-"data/value constructor".)
-
-< (:) :: a -> [a] -> [a]
-
-In the type of `:` (which is polymorphic), `[a]` represents a list of some
-homogeneous type `a`. I.e., `:` takes a value of type `a` and a list of `a`s
-and returns a list of `a`s.
-
-The empty list, `[]`, is also polymorphic:
-
-< [] :: [t]
-
-So we can construct a list of Booleans like this:
-
-< True : []
-< True : False : True : []
-
-(check operator associativity of `:` with `:i (:)`)
-
-There is also syntactic sugar for defining lists:
-
-< [True,False,True]
-< [1..10]
-< ['a'..'z'] -- works because of `Enum` type class
-
-
-List comprehensions
--------------------
-
-< -- to try: 
-< [2*x | x <- [1..10]]
-< [(i,j) | i <- [1..5], j <- ['a'..'e']]
-< [p | p <- [1..100], p `mod` 9 == 0]
-
-> integerRightTriangles p = [(a,b,p-(a+b)) | a <- [1..(p-2)], b <- [a..(p-1)],
->                            let c = p-(a+b) in a^2 + b^2 == c^2]
-
-
-Basic list operations
-_____________________
-
-`length`, `head`, `tail`, `last`, `init`,
-`!!`, `null`, `elem`,
-`take`, `drop`, `reverse`, `++`
-
-
-Defining functions on lists: pattern matching & recursion
----------------------------------------------------------
-
-When defining functions, we can provide multiple *patterns* for the function
-call to be matched against, so long as the results are all of the same type.
-The first pattern to match the actual argument will have its result chosen.
+Basics
+------
 
 > fib :: Integer -> Integer
-> fib 0 = 1
+> fib 0 = 0
 > fib 1 = 1
-> fib x = fib (x-1) + fib (x-2)
+> fib n = fib (n-1) + fib (n-2)
+>
+> factorial :: Integer -> Integer
+> factorial 0 = 1
+> factorial n = n * factorial (n-1)
+>
+> -- define integral `pow` (exponentiation) in terms of multiplication
+> pow :: Integral a => a -> a -> a
+> pow _ 0 = 1
+> pow n e = n * pow n (e-1)
+> 
+> -- define integral `add` only in terms of succ and pred
+> add :: Integral a => a -> a -> a
+> add m 0 = m
+> add m n | n > 0 = add (succ m) (pred n)
+>         | otherwise = add (pred m) (succ n)
+>
+> -- define integral `mod` using subtraction
+> mod' :: Integral a => a -> a -> a
+> mod' m n | m < n = m
+>         | otherwise = mod' (m-n) n
 
-Any data/value constructor can be used in pattern matches, so:
 
-> empty [] = "empty"
-> empty _  = "not empty" -- the variable `_` means "we don't care about this value"
-
-Our own `head` and `tail` implementations:
-
-> head' (x:_) = x
-> tail' (_:xs) = xs
-
-Implement `last` and `init`?
+List Manipulation
+-----------------
 
 > last' :: [a] -> a
 > last' [] = error "empty list"
-> last' [x] = x
-> last' (_:xs) = last' xs
+> last' (x:[]) = x
+> last' (x:xs) = last' xs
+>
+> (!!!) :: [a] -> Integer -> a
+> [] !!! _ = error "index too large"
+> (x:_) !!! 0 = x
+> (_:xs) !!! n = xs !!! pred n
+>
+> length' :: [a] -> Int
+> length' [] = 0
+> length' (_:xs) = 1 + length' xs
 > 
-> init' :: [a] -> [a]
-> init' [] = error "empty list"
-> init' [x] = []
-> init' (x:xs) = x : init' xs
+> -- elem' :: return True if a given element is found in a list, False otherwise
+> elem' :: Eq a => a -> [a] -> Bool
+> _ `elem'` [] = False
+> x `elem'` (y:ys) = x == y || x `elem'` ys
+>
+> -- and' :: determine if all values in a list are True
+> and' :: [Bool] -> Bool
+> and' [] = True
+> and' (x:xs) = x && and' xs
+> 
+> -- sum' :: compute sum of a list of numbers
+> sum' :: Num a => [a] -> a
+> sum' [] = 0
+> sum' (x:xs) = x + sum' xs
 
-Recursion is a common list programming pattern!
+
+List Construction
+-----------------
+
+> (+++) :: [a] -> [a] -> [a] 
+> [] +++ ys = ys
+> xs +++ [] = xs
+> (x:xs) +++ ys = x : (xs +++ ys)
+>
+> take' :: Int -> [a] -> [a]
+> take' _ [] = []
+> take' 0 _ = []
+> take' n (x:xs) = x : (take' (n-1) xs)
+> 
+> drop' :: Int -> [a] -> [a]
+> drop' _ [] = []
+> drop' 0 xs = xs
+> drop' n (_:xs) = drop (n-1) xs
+> 
+> -- replicate' :: create a list of N copies of some value
+> replicate' :: Int -> a -> [a]
+> replicate' 0 _ = []
+> replicate' n x = x : replicate' (n-1) x
+>
+> -- repeat' :: create an infinite list of some value
+> repeat' :: a -> [a]
+> repeat' x = x : repeat' x
+>
+> -- concat' :: concatenate all lists in a list of lists
+> concat' :: [[a]] -> [a]
+> concat' [] = []
+> concat' (x:xs) = x ++ concat' xs
+>
+> -- merge :: merge together two sorted lists to give a single sorted list
+> merge :: Ord a => [a] -> [a] -> [a]
+> merge xs [] = xs
+> merge [] ys = ys
+> merge l1@(x:xs) l2@(y:ys) | x < y = x : merge xs l2
+>                           | otherwise = y : merge l1 ys
+>
+> -- mergeSort :: sort a list by recursively merging sorted halves of a list
+> mergeSort :: Ord a => [a] -> [a]
+> mergeSort [] = []
+> mergeSort [x] = [x]
+> mergeSort l = merge (mergeSort left) (mergeSort right)
+>   where left = take half l
+>         right = drop half l
+>         half = length l `div` 2
+> 
+> -- zip' :: create a list of tuples drawn from elements of two lists
+> zip' :: [a] -> [b] -> [(a,b)]
+> zip' _ [] = []
+> zip' [] _ = []
+> zip' (x:xs) (y:ys) = (x,y) : zip' xs ys
+>
+> fibonacci :: [Integer]
+> fibonacci = 0 : 1 : next fibonacci
+>   where next (x0:x1:xs) = x0+x1 : next (x1:xs)
+
 

@@ -1,8 +1,8 @@
 % CS 340: Programming Paradigms and Patterns
-% Lect 23 - Some Monad Instances
+% Lect 14 - Some Monads
 % Michael Lee
 
-> module Lect.Lect23 where
+> module Lect.Lect14 where
 
 Some Monad Instances
 ====================
