@@ -8,6 +8,15 @@
 Types and Typeclasses
 =====================
 
+Agenda:
+  - Types
+  - Basic Types
+  - Function types
+  - Function application
+  - "Operators"
+  - Polymorphic functions
+  - Type classes
+
 
 Types
 -----
@@ -16,13 +25,7 @@ A *type* defines a collection of values.
 
   - `e :: T` means that expression `e` (when evaluated) has type `T`
 
-  - all types start with a capital letter
-
-  - the type of all values and expressions are either explicitly specified
-    or inferred at compile time
-
-  - Haskell programs are type safe, i.e., there can never be type-related
-    errors at runtime
+  - all type names start with a capital letter
 
 
 Basic types
@@ -79,7 +82,7 @@ A function of multiple arguments can be implemented in different ways:
 
      Here's a function of three `Int` arguments:
 
-         bar :: Int -> (Int -> (Int -> Int)) -- interpret this!
+         bar :: Int -> (Int -> (Int -> Int))
 
      We call functions that take arguments one at a time like this "curried"
      functions. This is the default in Haskell, so the `->` in type declarations
@@ -151,8 +154,8 @@ E.g., a function which takes a two-tuple and returns the first element has type:
     fst :: (a, b) -> a
 
 
-Since an unqualified type variable says nothing about its actual type,
-you can't do much with it the value of the corresponding argument.
+Since an unqualified type variable says nothing about its actual type, you can't
+do much with the value of the corresponding argument.
 
 But the type of a polymorphic function can actually be quite helpful in
 determining what it does!
@@ -169,16 +172,16 @@ Just as a type is a collection of related values, a type *class* is a collection
 of related types. A class defines functions (known as methods) that are 
 supported by all instances (i.e., types) of that class
 
-Some common classes and their methods:
+Some common classes, their methods, and instances:
 
     class Eq a where
       (==) :: a -> a -> Bool
       (/=) :: a -> a -> Bool
 
-    class Show a where
-      show :: a -> String
+      instances: Int, Integer, Float, Double, Char, Bool
 
-    class Eq a => Ord a where
+
+    class Ord a where
       compare :: a -> a -> Ordering
       (<) :: a -> a -> Bool
       (<=) :: a -> a -> Bool
@@ -186,6 +189,9 @@ Some common classes and their methods:
       (>=) :: a -> a -> Bool
       max :: a -> a -> a
       min :: a -> a -> a
+
+      instances: Int, Integer, Float, Double, Char, Bool
+
 
     class Num a where
       (+) :: a -> a -> a
@@ -196,16 +202,20 @@ Some common classes and their methods:
       signum :: a -> a
       fromInteger :: Integer -> a
 
+      instances: Int, Integer, Float, Double
 
-Polymorphic functions can be *constrained* by including one or more 
-*class constraints* in the type declaration. 
 
-E.g., subtract is defined for all types which are instances of the `Num` class
+Polymorphic function type declarations can also include *class constraints*, 
+which indicate that constrained type variables must be instances of specific 
+classes.
+
+E.g., the following type declaration says that type variable `a` must be an
+instance of the `Num` class:
 
     subtract :: Num a => a -> a -> a
 
 
-Inspect the types of `^`, `read`, `length`.
+Inspect the types of `^`, `show`, `read`, `length`.
 
 At GHCi, you can use the `:info` command to get more information about types,
 classes, methods, and class instances.

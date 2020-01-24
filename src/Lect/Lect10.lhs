@@ -7,6 +7,28 @@
 Higher order functions
 ======================
 
+Agenda:
+  - Lambda expressions
+  - Operator sections
+  - HOFs
+  - Composition & Application
+  - Mapping as iteration
+  - Filtering
+  - Generalized "zipping"
+  - Miscellaneous HOFs
+
+
+Lambda expressions
+------------------
+
+
+Operator sections
+-----------------
+
+
+HOFs
+----  
+
 A higher-order function is a function that takes one or more functions as
 parameters or returns a function. ("Regular" functions are called first-order
 functions).

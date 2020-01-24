@@ -9,14 +9,10 @@ Introduction to Haskell
 =======================
 
 Agenda:
-
-- working with literate source files
-
-- general development workflow and tools
-
-- notable (& maybe surprising) language features
-
-- indentation and layout rules
+  - working with literate source files
+  - general development workflow and tools
+  - notable (& maybe surprising) language features
+  - indentation and layout rules
 
 
 Literate Haskell
@@ -59,7 +55,8 @@ Notable (& maybe surprising) language features
 
 1. Strong static typing: Every expression or variable has a type associated with
                          it that doesn't change, and is rigidly enforced by the
-                         compiler.
+                         compiler. Haskel programs are type-safe; i.e., there
+                         will never be run-time type related errors!
 
 
 2. Type inference: The compiler can figure out the types of many things, so that
