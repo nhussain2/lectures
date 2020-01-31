@@ -87,12 +87,12 @@ Hspec gives us a way to specify tests in a human-legible way:
 
   - You can run a `Spec` using `hspec`.
 
-  - You can test a specific module with: `stack test --test-arguments "-m MP.MP1"`
-
   - Hspec supports both unit tests and property-based tests
 
   - `stack test` will automatically run "test/Spec.hs", which will discover
     all "*Spec.hs" files in the "test" directory and run their "spec" functions.
+
+  - You can test a specific module with: `stack test --test-arguments "-m MP.MP1"`
 
   - We typically put all test code in the "test" directory --- all `Spec`s
     defined in this file are in "Lect04Spec.hs"
