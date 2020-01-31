@@ -9,8 +9,15 @@ dependencies:
 - base >= 4.7 && < 5
 - text
 - bytestring
-- QuickCheck
 - hspec
+- HUnit
+- HUnit-approx
+- QuickCheck
+- test-invariant
+- regex-pcre
+- deepseq
+- random
+- random-shuffle
 
 library:
   source-dirs: src

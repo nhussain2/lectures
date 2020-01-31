@@ -76,7 +76,6 @@ Patterns can also be used to "deconstruct" values. E.g., for tuples:
 
 > fst' :: (a,b) -> a
 > fst' (x,_) = x
-> snd' (_,x) = x
 >
 >
 > distanceFromOrigin :: (Floating a, Eq a) => (a,a) -> a
