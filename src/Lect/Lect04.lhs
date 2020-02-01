@@ -111,9 +111,9 @@ executed to determine if associated tests pass or fail. Assertions include
 >            TestCase $ assertApproxEqual "sqrt 2" 0.001 1.414 (sqrt 2)
 >          ]
 >
-> tests2 = TestList [
+> tests2 = TestList [ -- broken tests!
 >            TestCase $ assertBool "even 7" (even 7),
->            TestCase $ assertEqual "2**10" 1024 (2**12),
+>            TestCase $ assertEqual "2**12" 1024 (2**12),
 >            TestCase $ assertApproxEqual "sqrt 2" 0.0001 1.414 (sqrt 2)
 >          ]
 
@@ -138,8 +138,6 @@ syntax to create `Spec`s. E.g., to test `nand`:
 >       assertEqual "nand False True"  True  (nand False True)
 >       assertEqual "nand False False" True  (nand False False)
 
-We can run a `Spec` with `hspec`.
-
 ---
 
 We can also use Hspec functions `shouldBe`, `shouldSatisfy`, and `shouldThrow`
@@ -151,7 +149,7 @@ instead of HUnit assertions to describe test expectations. E.g.,
 <
 < someAction `shouldThrow` anyException
 
-E.g., to test `c2f` (note that we try to exhaustively test edge cases):
+E.g., to test `c2h` (note that we try to exhaustively test edge cases):
 
 > c2f :: Fractional a => a -> a
 > c2f c = c * 9/5 + 32
@@ -197,6 +195,7 @@ selected inputs (based on the input types) to test that the property holds.
 
   - takes the chore out of writing individual test cases, and our property
     specifications serve as useful high-level documentation!
+
 
 E.g., some arithmetic properties:
 

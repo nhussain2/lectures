@@ -14,7 +14,6 @@ dependencies:
 - HUnit-approx
 - QuickCheck
 - test-invariant
-- regex-pcre
 - deepseq
 - random
 - random-shuffle
