@@ -143,11 +143,12 @@ syntax to create `Spec`s. E.g., to test `nand`:
 We can also use Hspec functions `shouldBe`, `shouldSatisfy`, and `shouldThrow`
 instead of HUnit assertions to describe test expectations. E.g., 
 
-< (2**10) `shouldBe` 1024
-<
-< 8 `shouldSatisfy` even
-<
-< someAction `shouldThrow` anyException
+    (2**10) `shouldBe` 1024
+
+    8 `shouldSatisfy` even
+
+    someAction `shouldThrow` anyException
+
 
 E.g., to test `c2h` (note that we try to exhaustively test edge cases):
 

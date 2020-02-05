@@ -2,7 +2,7 @@
 % Lect 05 - Lists
 % Michael Lee
 
-> module Lect.Lect05 where
+> module Lect.Lect05Complete where
 
 Lists
 =====
@@ -97,24 +97,25 @@ Functions that construct lists typically:
 
 > replicate' :: Int -> a -> [a]
 > replicate' 0 _ = []
-> replicate' n x = undefined
+> replicate' n x = x : replicate' (n-1) x
 >
 > enumFromTo' :: (Ord a, Enum a) => a -> a -> [a]
-> enumFromTo' x y = undefined
+> enumFromTo' x y | x <= y    = x : enumFromTo' (succ x) y
+>                 | otherwise = []
 >
 > -- and now for some infinite lists
 >
 > ones :: [Int]
-> ones = undefined
+> ones = 1 : ones
 > 
 > repeat' :: a -> [a]
-> repeat' x = undefined
+> repeat' x = x : repeat' x
 >
 > enumFrom' :: Enum a => a -> [a]
-> enumFrom' x = undefined
+> enumFrom' x = x : enumFrom' (succ x)
 >
 > iterate' :: (a -> a) -> a -> [a]
-> iterate' f x = undefined
+> iterate' f x = x : iterate' f (f x)
 
 Note: to limit the number of values drawn from an infinite list, we can use
       `take` (we'll implement it later)
@@ -189,13 +190,13 @@ E.g.,
 >                                      a^2 + b^2 == c^2]
 >
 > factors :: Integral a => a -> [a]
-> factors n = undefined
+> factors n = [f | f <- [1..n], n `mod` f == 0]
 >
 > cartesianProduct :: [a] -> [b] -> [(a,b)]
-> cartesianProduct xs ys = undefined
+> cartesianProduct xs ys = [(x,y) | x <- xs, y <- ys]
 >
 > concat' :: [[a]] -> [a]
-> concat' ls = undefined
+> concat' ls = [x | l <- ls, x <- l]
 
 
 Common list functions
@@ -279,22 +280,23 @@ Re-define the following functions:
 
 > (+++) :: [a] -> [a] -> [a]
 > [] +++ ys = ys
-> (x:xs) +++ ys = undefined
+> (x:xs) +++ ys = x : xs +++ ys
 >
 > map' :: (a -> b) -> [a] -> [b]
 > map' _ [] = []
-> map' f (x:xs) = undefined
+> map' f (x:xs) = f x : map' f xs
 >
 > filter' :: (a -> Bool) -> [a] -> [a]
 > filter' _ [] = []
-> filter' p (x:xs) = undefined
+> filter' p (x:xs) | p x       = x : filter' p xs
+>                  | otherwise = filter' p xs
 >
 > take' :: Int -> [a] -> [a]
 > take' 0 _ = []
 > take' _ [] = []
-> take' n (x:xs) = undefined
+> take' n (x:xs) = x : take' (n-1) xs
 >
 > drop' :: Int -> [a] -> [a]
 > drop' 0 xs = xs
 > drop' _ [] = []
-> drop' n (x:xs) = undefined
+> drop' n (x:xs) = drop' (n-1) xs
