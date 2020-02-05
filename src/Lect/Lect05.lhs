@@ -96,11 +96,10 @@ Functions that construct lists typically:
 
 
 > replicate' :: Int -> a -> [a]
-> replicate' 0 _ = []
-> replicate' n x = undefined
+> replicate' = undefined
 >
 > enumFromTo' :: (Ord a, Enum a) => a -> a -> [a]
-> enumFromTo' x y = undefined
+> enumFromTo' = undefined
 >
 > -- and now for some infinite lists
 >
@@ -108,13 +107,13 @@ Functions that construct lists typically:
 > ones = undefined
 > 
 > repeat' :: a -> [a]
-> repeat' x = undefined
+> repeat' = undefined
 >
 > enumFrom' :: Enum a => a -> [a]
-> enumFrom' x = undefined
+> enumFrom' = undefined
 >
 > iterate' :: (a -> a) -> a -> [a]
-> iterate' f x = undefined
+> iterate' = undefined
 
 Note: to limit the number of values drawn from an infinite list, we can use
       `take` (we'll implement it later)
@@ -189,13 +188,13 @@ E.g.,
 >                                      a^2 + b^2 == c^2]
 >
 > factors :: Integral a => a -> [a]
-> factors n = undefined
+> factors = undefined
 >
 > cartesianProduct :: [a] -> [b] -> [(a,b)]
-> cartesianProduct xs ys = undefined
+> cartesianProduct = undefined
 >
 > concat' :: [[a]] -> [a]
-> concat' ls = undefined
+> concat' = undefined
 
 
 Common list functions
@@ -278,23 +277,16 @@ E.g., to compute the length of a list:
 Re-define the following functions:
 
 > (+++) :: [a] -> [a] -> [a]
-> [] +++ ys = ys
-> (x:xs) +++ ys = undefined
+> (+++) = undefined
 >
 > map' :: (a -> b) -> [a] -> [b]
-> map' _ [] = []
-> map' f (x:xs) = undefined
+> map' = undefined
 >
 > filter' :: (a -> Bool) -> [a] -> [a]
-> filter' _ [] = []
-> filter' p (x:xs) = undefined
+> filter' = undefined
 >
 > take' :: Int -> [a] -> [a]
-> take' 0 _ = []
-> take' _ [] = []
-> take' n (x:xs) = undefined
+> take' = undefined
 >
 > drop' :: Int -> [a] -> [a]
-> drop' 0 xs = xs
-> drop' _ [] = []
-> drop' n (x:xs) = undefined
+> drop' = undefined
