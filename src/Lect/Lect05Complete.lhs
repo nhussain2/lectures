@@ -128,7 +128,7 @@ Instead of constructing lists with `:`, Haskell gives us syntactic shortcuts:
 
 E.g., for simple itemized lists, [...]
 
-    1:2:3:4:5:6:7:8:9:10:[]  ==  [1,2,3,4,5,6,7,8,9,10]
+    [1,2,3,4,5,6,7,8,9,10]   ==  1:2:3:4:5:6:7:8:9:10:[]
 
     [[1, 2, 3], [4, 5, 6]]   ==  (1:2:3:[]) : (4:5:6:[]) : []
 
@@ -150,7 +150,7 @@ E.g., for types that are instances of `Enum`, [I..J] and [I,J..K] and [I..]:
 
     [2,4..10]   ==  [2,4,6,8,10]
     
-    10,9..1]    ==  [10,9,8,7,6,5,4,3,2,1]
+    [10,9..1]   ==  [10,9,8,7,6,5,4,3,2,1]
 
 
 E.g., for infinite lists of `Enum` types, [I..] and [I,J..]
@@ -276,7 +276,7 @@ E.g., to compute the length of a list:
 > length' [] = 0
 > length' (x:xs) = 1 + length' xs
 
-Re-define the following functions:
+E.g., more built-in functions:
 
 > (+++) :: [a] -> [a] -> [a]
 > [] +++ ys = ys
