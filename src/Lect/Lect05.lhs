@@ -3,6 +3,7 @@
 % Michael Lee
 
 > module Lect.Lect05 where
+> import Data.Char
 
 Lists
 =====
@@ -30,7 +31,7 @@ Read as: A list containing instances of type 'a' ([a]) is either an empty
          containing instances of type 'a' ([a]).
 
 Takeaways: 
-  - lists are defined recursively!
+  - a list is defined recursively, i.e., in terms of itself
   - the list type is polymorphic
   - lists are homogeneous (all elements of a given list are of the same type)
 
@@ -110,9 +111,6 @@ Functions that construct lists typically:
 >
 > enumFrom' :: Enum a => a -> [a]
 > enumFrom' = undefined
->
-> iterate' :: (a -> a) -> a -> [a]
-> iterate' = undefined
 
 Note: to limit the number of values drawn from an infinite list, we can use
       `take` (we'll implement it later)
@@ -200,7 +198,7 @@ Common list functions
 ---------------------
 
 The "Prelude" module defines many useful list functions (some of which we 
-implemented above). The most commonly used include:
+implemented above). They include:
 
   - Basic operations:
 
@@ -208,24 +206,41 @@ implemented above). The most commonly used include:
     tail :: [a] -> [a]
     null :: [a] -> Bool
     length :: [a] -> Int
+    last :: [a] -> a
+    init :: [a] -> [a]
     (++) :: [a] -> [a] -> [a]
-    map :: (a -> b) -> [a] -> [b]
-    filter :: (a -> Bool) -> [a] -> [a]
+    (!!) :: [a] -> Int -> a
 
   - Building lists:
 
-    iterate :: (a -> a) -> a -> [a]
     repeat :: a -> [a]
     replicate :: Int -> a -> [a]
     cycle :: [a] -> [a]
-    zip :: [a] -> [b] -> [(a, b)]
+
+  - Lists -> Lists:
+
+    concat :: [[a]] -> [a]
+    reverse :: [a] -> [a]
+    zip :: [a] -> [b] -> [(a,b)]
 
   - Extracting sublists:
 
     take :: Int -> [a] -> [a]
     drop :: Int -> [a] -> [a]
-    takeWhile :: (a -> Bool) -> [a] -> [a]
-    dropWhile :: (a -> Bool) -> [a] -> [a]
+    break :: (a -> Bool) -> [a] -> ([a], [a])
+
+  - Class specific:
+
+    elem :: Eq a => a -> [a] -> Bool
+    maximum :: Ord a => [a] -> a
+    minimum :: Ord a => [a] -> a
+    sum :: Num a => [a] -> a
+    product :: Num a => [a] -> a
+    lines :: String -> [String]
+    words :: String -> [String]
+
+Note: many of these functions operate on a type class that includes lists and
+      other recursive data types (We'll see how this works later.)
 
 
 List processing functions
@@ -254,18 +269,19 @@ values from the list. A common technique for doing this is structural recursion.
 
 -- Structural recursion
 
-Structural recursion defines a pattern for writing functions that handle 
-recursively defined data types (like the list). When a structurally recursive
-function is called with a value, it:
+Structural recursion loosely describes a pattern for writing functions that
+handle recursively defined data types (like the list). When called with a value
+of such a type, a structurally recursive function will:
 
-  1. starts by determining how the value was constructed
+  1. start by determining how the value was constructed
 
-  2. if the value is not recursive, process it and return a value
+  2. if the value is not a recursive instance of the data type, simply process
+     its immediate contents
 
-  3. if the value is recursive, "deconstruct" the value to process any
-     sub-value(s) then repeat on the recursive portion(s)
+  3. if the value is a recursive instance of the data type, "deconstruct" it to 
+     process its immediate contents, then recurse on the nested value(s)
 
-Pattern matching on value constructors in Haskell helps with both (1) and (3).
+Pattern matching in Haskell helps with both (1) and (3).
 
 E.g., to compute the length of a list:
 
@@ -275,17 +291,49 @@ E.g., to compute the length of a list:
 
 E.g., more built-in functions:
 
+> last' :: [a] -> a
+> last' = undefined
+>
+> 
+> init' :: [a] -> [a]
+> init' = undefined
+>
+>
 > (+++) :: [a] -> [a] -> [a]
 > (+++) = undefined
 >
-> map' :: (a -> b) -> [a] -> [b]
-> map' = undefined
 >
-> filter' :: (a -> Bool) -> [a] -> [a]
-> filter' = undefined
+> (!!!) :: [a] -> Int -> a
+> (!!!) = undefined
+>
+>
+> cycle' :: [a] -> [a]
+> cycle' = undefined
+>
+>
+> reverse' :: [a] -> [a]
+> reverse' = undefined
+>
+>
+> zip' :: [a] -> [b] -> [(a,b)]
+> zip' = undefined
+>
 >
 > take' :: Int -> [a] -> [a]
 > take' = undefined
 >
+>
 > drop' :: Int -> [a] -> [a]
 > drop' = undefined
+>
+>
+> elem' :: Eq a => a -> [a] -> Bool
+> elem' = undefined
+>
+>
+> break' :: (a -> Bool) -> [a] -> ([a], [a])
+> break' = undefined
+>
+>
+> words' :: String -> [String]
+> words' = undefined
