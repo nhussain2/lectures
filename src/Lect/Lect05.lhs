@@ -7,16 +7,15 @@
 Lists
 =====
 
-Agenda
-
-- The List type
-- Constructing lists
-- Syntactic sugar
-- List comprehensions
-- Common list functions
-- List processing functions
-  - Pattern matching
-  - Structural recursion
+Agenda:
+  - The List type
+  - Constructing lists
+  - Syntactic sugar
+  - List comprehensions
+  - Common list functions
+  - List processing functions
+    - Pattern matching
+    - Structural recursion
 
 
 The List type
