@@ -209,7 +209,6 @@ implemented above). They include:
     null :: [a] -> Bool
     length :: [a] -> Int
     last :: [a] -> a
-    init :: [a] -> [a]
     (++) :: [a] -> [a] -> [a]
     (!!) :: [a] -> Int -> a
 
@@ -229,6 +228,7 @@ implemented above). They include:
 
     take :: Int -> [a] -> [a]
     drop :: Int -> [a] -> [a]
+    splitAt :: Int -> [a] -> ([a], [a])
     break :: (a -> Bool) -> [a] -> ([a], [a])
 
   - Class specific:
@@ -297,11 +297,6 @@ E.g., more built-in functions:
 > last' (x:[]) = x
 > last' (_:xs) = last' xs
 >
-> 
-> init' :: [a] -> [a] -- this function is almost never used (why?)
-> init' (x:[]) = []
-> init' (x:xs) = x : init' xs
->
 >
 > (+++) :: [a] -> [a] -> [a]
 > [] +++ ys = ys
@@ -313,19 +308,9 @@ E.g., more built-in functions:
 > (_:xs) !!! n = xs !!! (n-1)
 >
 >
-> cycle' :: [a] -> [a]
-> cycle' xs = xs +++ cycle' xs
->
->
 > reverse' :: [a] -> [a]
 > reverse' [] = []
 > reverse' (x:xs) = reverse' xs +++ [x] -- is there a more efficient way?
->
->
-> zip' :: [a] -> [b] -> [(a,b)]
-> zip' _ [] = []
-> zip' [] _ = []
-> zip' (x:xs) (y:ys) = (x,y) : zip' xs ys
 >
 >
 > take' :: Int -> [a] -> [a]
@@ -334,15 +319,11 @@ E.g., more built-in functions:
 > take' n (x:xs) = x : take' (n-1) xs
 >
 >
-> drop' :: Int -> [a] -> [a]
-> drop' 0 xs = xs
-> drop' _ [] = []
-> drop' n (x:xs) = drop' (n-1) xs
->
->
-> elem' :: Eq a => a -> [a] -> Bool
-> _ `elem'` [] = False
-> x `elem'` (y:ys) = if x == y then True else x `elem'` ys
+> splitAt' :: Int -> [a] -> ([a], [a])
+> splitAt' _ [] = ([],[])
+> splitAt' 0 xs = ([], xs)
+> splitAt' n (x:xs) = let (ys,zs) = splitAt' (n-1) xs
+>                     in (x:ys, zs)
 >
 >
 > break' :: (a -> Bool) -> [a] -> ([a], [a])

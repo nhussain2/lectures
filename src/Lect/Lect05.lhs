@@ -207,7 +207,6 @@ implemented above). They include:
     null :: [a] -> Bool
     length :: [a] -> Int
     last :: [a] -> a
-    init :: [a] -> [a]
     (++) :: [a] -> [a] -> [a]
     (!!) :: [a] -> Int -> a
 
@@ -227,6 +226,7 @@ implemented above). They include:
 
     take :: Int -> [a] -> [a]
     drop :: Int -> [a] -> [a]
+    splitAt :: Int -> [a] -> ([a], [a])
     break :: (a -> Bool) -> [a] -> ([a], [a])
 
   - Class specific:
@@ -294,41 +294,25 @@ E.g., more built-in functions:
 > last' :: [a] -> a
 > last' = undefined
 >
-> 
-> init' :: [a] -> [a]
-> init' = undefined
->
 >
 > (+++) :: [a] -> [a] -> [a]
 > (+++) = undefined
 >
 >
-> (!!!) :: [a] -> Int -> a
+> (!!!) :: [a] -> Int -> a -- the ! in its name is an implicit warning as to its inefficiency!
 > (!!!) = undefined
->
->
-> cycle' :: [a] -> [a]
-> cycle' = undefined
 >
 >
 > reverse' :: [a] -> [a]
 > reverse' = undefined
 >
 >
-> zip' :: [a] -> [b] -> [(a,b)]
-> zip' = undefined
->
->
 > take' :: Int -> [a] -> [a]
 > take' = undefined
 >
 >
-> drop' :: Int -> [a] -> [a]
-> drop' = undefined
->
->
-> elem' :: Eq a => a -> [a] -> Bool
-> elem' = undefined
+> splitAt' :: Int -> [a] -> ([a], [a])
+> splitAt' = undefined
 >
 >
 > break' :: (a -> Bool) -> [a] -> ([a], [a])
