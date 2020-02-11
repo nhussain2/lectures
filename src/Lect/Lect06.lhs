@@ -7,134 +7,145 @@
 Recursion
 =========
 
+Agenda:
+  - Designing recursive functions
+  - Structural vs. Generative recursion
+  - Accumulators and Tail recursion
+
+
 Designing recursive functions
 -----------------------------
 
-Step 1: determine the type
-Step 2: list all the patterns
-Step 3: define the trivial cases
-Step 4: define the hard cases
-Step 5: generalize and simplify
+Steps:
+  1. determine the function type
+  2. identify which inputs can be decomposed into subproblems
+  3. define the function for input patterns that can be handled non-recursively
+  4. define the function for input patterns that require recursion
+  5. ensure that the values are "shrunk" in recursive calls
+  6. generalize and simplify
+
+In steps 3 and 4, we might discover that we need additional functions, which 
+themselves require stepping through the design process!
+
+---
+
+E.g., summing integer values from 0 up to N:
+
+> sumTo :: undefined
+> sumTo = undefined
+
+--- 
+
+E.g., compute all permutations of values in a list
+
+> permutations :: undefined
+> permutations = undefined
 
 
-Basics
-------
+Structural vs. Generative recursion
+-----------------------------------
 
-> fib :: Integer -> Integer
-> fib 0 = 0
-> fib 1 = 1
-> fib n = fib (n-1) + fib (n-2)
->
-> factorial :: Integer -> Integer
-> factorial 0 = 1
-> factorial n = n * factorial (n-1)
->
-> -- define integral `pow` (exponentiation) in terms of multiplication
-> pow :: Integral a => a -> a -> a
-> pow _ 0 = 1
-> pow n e = n * pow n (e-1)
-> 
-> -- define integral `add` only in terms of succ and pred
-> add :: Integral a => a -> a -> a
-> add m 0 = m
-> add m n | n > 0 = add (succ m) (pred n)
->         | otherwise = add (pred m) (succ n)
->
-> -- define integral `mod` using subtraction
-> mod' :: Integral a => a -> a -> a
-> mod' m n | m < n = m
->         | otherwise = mod' (m-n) n
+The above recipe may apply when a problem can be tidily decomposed into
+subproblems according to the implicit structure of the values involved. E.g.,
+solving a problem represented as a list by processing its head and recursing on
+its tail.
+
+But not all recursive functions follow this pattern! Sometimes solving a problem
+recursively requires that the input values be transformed into new values which
+aren't clearly substructures of nor "smaller" than the originals. 
+
+This is sometimes called "generative" recursion. Their design is the domain of
+algorithms.
+
+---
+
+E.g., Newton's method for finding the square root of N starts with a guess g
+      (say, N/2), then tests to see if it is good enough (i.e., if the square of
+      the g^2 == N); if not, we improve the guess by average g with n/g and try
+      again. The intuition is that if g is too small, n/g will be increase the 
+      guess, and if g is too big, n/g will decrease.
 
 
-List Manipulation
------------------
+> newtonsSqrt :: undefined
+> newtonsSqrt = undefined
+>
+> infix 4 =~= -- approx equals (might come in handy)
+> (=~=) :: (Floating a, Ord a) =>  a -> a -> Bool
+> x =~= y = abs (x - y) < 0.000001
 
-> last' :: [a] -> a
-> last' [] = error "empty list"
-> last' (x:[]) = x
-> last' (x:xs) = last' xs
->
-> (!!!) :: [a] -> Integer -> a
-> [] !!! _ = error "index too large"
-> (x:_) !!! 0 = x
-> (_:xs) !!! n = xs !!! pred n
->
-> length' :: [a] -> Int
-> length' [] = 0
-> length' (_:xs) = 1 + length' xs
-> 
-> -- elem' :: return True if a given element is found in a list, False otherwise
-> elem' :: Eq a => a -> [a] -> Bool
-> _ `elem'` [] = False
-> x `elem'` (y:ys) = x == y || x `elem'` ys
->
-> -- and' :: determine if all values in a list are True
-> and' :: [Bool] -> Bool
-> and' [] = True
-> and' (x:xs) = x && and' xs
-> 
-> -- sum' :: compute sum of a list of numbers
-> sum' :: Num a => [a] -> a
-> sum' [] = 0
-> sum' (x:xs) = x + sum' xs
+---
+
+E.g., sort a list of values by splitting it in two, sorting each half, then 
+merging the sorted results:
+
+> mergesort :: undefined
+> mergesort = undefined
 
 
-List Construction
------------------
+Accumulators and Tail recursion
+-------------------------------
 
-> (+++) :: [a] -> [a] -> [a] 
-> [] +++ ys = ys
-> xs +++ [] = xs
-> (x:xs) +++ ys = x : (xs +++ ys)
->
-> take' :: Int -> [a] -> [a]
-> take' _ [] = []
-> take' 0 _ = []
-> take' n (x:xs) = x : (take' (n-1) xs)
-> 
-> drop' :: Int -> [a] -> [a]
-> drop' _ [] = []
-> drop' 0 xs = xs
-> drop' n (_:xs) = drop (n-1) xs
-> 
-> -- replicate' :: create a list of N copies of some value
-> replicate' :: Int -> a -> [a]
-> replicate' 0 _ = []
-> replicate' n x = x : replicate' (n-1) x
->
-> -- repeat' :: create an infinite list of some value
-> repeat' :: a -> [a]
-> repeat' x = x : repeat' x
->
-> -- concat' :: concatenate all lists in a list of lists
-> concat' :: [[a]] -> [a]
-> concat' [] = []
-> concat' (x:xs) = x ++ concat' xs
->
-> -- merge :: merge together two sorted lists to give a single sorted list
-> merge :: Ord a => [a] -> [a] -> [a]
-> merge xs [] = xs
-> merge [] ys = ys
-> merge l1@(x:xs) l2@(y:ys) | x < y = x : merge xs l2
->                           | otherwise = y : merge l1 ys
->
-> -- mergeSort :: sort a list by recursively merging sorted halves of a list
-> mergeSort :: Ord a => [a] -> [a]
-> mergeSort [] = []
-> mergeSort [x] = [x]
-> mergeSort l = merge (mergeSort left) (mergeSort right)
->   where left = take half l
->         right = drop half l
->         half = length l `div` 2
-> 
-> -- zip' :: create a list of tuples drawn from elements of two lists
-> zip' :: [a] -> [b] -> [(a,b)]
-> zip' _ [] = []
-> zip' [] _ = []
-> zip' (x:xs) (y:ys) = (x,y) : zip' xs ys
->
-> fibonacci :: [Integer]
-> fibonacci = 0 : 1 : next fibonacci
->   where next (x0:x1:xs) = x0+x1 : next (x1:xs)
+Some recursive functions are more naturally written and/or efficient when
+implemented with an *accumulator*. 
 
+E.g., consider our original implementation of `reverse`:
 
+> reverse' :: [a] -> [a]
+> reverse' [] = []
+> reverse' (x:xs) = reverse' xs ++ [x]
+
+This is inefficient, because the concatenation operator (++) needs to "search
+for the end" of its first argument list (which is also the result of the
+recursive call) in order to do its job. It would be more efficient to use the
+`:` operator to incrementally build up a partially reversed list over the course
+of the recursion. 
+
+> reverse'' :: [a] -> [a] -> [a]
+> reverse'' = undefined
+
+The second argument of `reverse''` needs to be "primed" with an empty list, and
+then gradually accumulates the solution, which we obtain at the end of the 
+recursion. 
+
+So that the caller doesn't need to provide the priming value, accumulators are
+typically hidden inside where clauses:
+
+> reverse''' :: [a] -> [a]
+> reverse''' xs = rev xs []
+>   where rev = undefined
+
+Try doing ":set +s" in ghci, then comparing outputs for the following:
+
+  - take 5 $ reverse'   [1..1000000]
+  - take 5 $ reverse''' [1..1000000]
+
+---
+
+We say that a function like `reverse'''`, where the solution to the problem is
+obtained at the end of the recursion instead of being computed on the way "up"
+out of a recursion, is *tail recursive*.
+
+Sometimes tail recursion is good in Haskell, as it allows the function to be
+more efficient (as above). Sometimes, however, it works against us. 
+
+Consider a function that takes a value x and partitions an input list into two
+output lists: one containing values < x, and the other containing values >= x.
+Here we have two implementations --- one tail recursive and one not:
+
+> tailPartition :: Ord a => a -> [a] -> ([a],[a])
+> tailPartition n xs = part xs ([],[])
+>   where part [] r = r
+>         part (y:ys) (lts,gts) | y < n     = part ys (y:lts, gts)
+>                               | otherwise = part ys (lts, y:gts)
+>
+>
+> nontailPartition :: Ord a => a -> [a] -> ([a],[a])
+> nontailPartition n [] = ([],[])
+> nontailPartition n (x:xs) | x < n     = (x:lts, gts)
+>                           | otherwise = (lts, x:gts)
+>   where (lts, gts) = nontailPartition n xs
+
+What happens when we call the two variations on an infinite list, but we only
+need to take a fixed number of values from a given partition?
+
+  - E.g., "take 5 $ snd $ XXXPartition 100 [1..]"
