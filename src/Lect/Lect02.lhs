@@ -1,12 +1,12 @@
 % CS 340: Programming Paradigms and Patterns
-% Lect 02 - Types and Typeclasses
+% Lect 02 - Types and Type Classes
 % Michael Lee
 
 > module Lect.Lect02 where
 > import Data.Char
 
-Types and Typeclasses
-=====================
+Types and Type Classes
+======================
 
 Agenda:
   - Types
@@ -15,7 +15,7 @@ Agenda:
   - Function application
   - "Operators"
   - Polymorphic functions
-  - Type classes
+  - Type Classes
 
 
 Types
@@ -168,11 +168,11 @@ e.g., what do `snd`, `id`, `const`, do, based on their types?
 e.g., try to decipher the types of `.` and `until`
 
 
-Type classes (aka Classes)
+Type Classes (aka Classes)
 --------------------------
 
 Just as a type is a collection of related values, a type *class* is a collection
-of related types. A class defines functions (known as methods) that are 
+of related types. A class defines functions (known as methods) that are
 supported by all instances (i.e., types) of that class
 
 Some common classes, their methods, and instances:
