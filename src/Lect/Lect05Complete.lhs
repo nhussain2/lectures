@@ -338,3 +338,26 @@ E.g., more built-in functions:
 > words' l@(c:cs) | isSpace c = words' cs
 >                 | otherwise = let (w, ws) = break' isSpace l
 >                               in w : words' ws
+
+
+E.g., the Caesar cipher is an encryption scheme that takes a plain text input
+string P and a shift value N, and produces an encrypted version of the string
+by replacing each letter in P with one N letters away in the alphabet (wrapping
+around, if needed).
+
+For the string "HELLO WORLD" and a shift value of 5:
+
+  Plain:      H E L L O  W O R L D
+  Encrypted:  M J Q Q T  B T W Q I
+
+To implement the Caesar cipher, we need to be able to convert characters from/to
+their corresponding ASCII codes. `ord`/`chr` do this. `isLetter` can be used to
+determine if a character is a letter. We'll convert all letters to uppercase
+for simplicity with `toUpper`.
+
+> caesar :: Int -> String -> String
+> caesar _ [] = []
+> caesar n (x:xs) = (if isLetter x then encrypt x else x) : caesar n xs
+>   where encrypt x = n2l ((l2n x + n) `mod` 26)
+>         l2n c = ord (toUpper c) - ord 'A'
+>         n2l n = chr (n + ord 'A')
