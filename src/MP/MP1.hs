@@ -6,7 +6,7 @@ import Data.Char
 
 p1_ex1 a b c = let d = head a
                in case b of (n, True) -> c < n
-                            otherwise -> False
+                            otherwise -> d
 
 
 p1_ex2 a b c d e = (func a c, e ++ (b:d))
