@@ -2,61 +2,164 @@
 % Lect 07 - Higher order functions
 % Michael Lee
 
-> module Lect.Lect07 where
+> module Lect.Lect07Complete where
+> import Data.Char
+> import Data.List
 
 Higher order functions
 ======================
 
 Agenda:
-  - Lambda expressions
-  - Operator sections
-  - HOFs
-  - Composition & Application
-  - Mapping as iteration
+  - HOF overview
+  - Functions as values
+    - Partial application
+    - Operator sections
+    - Lambda expressions
+  - Function application
+  - Function composition
+  - Mapping
   - Filtering
   - Generalized "zipping"
   - Miscellaneous HOFs
 
 
-Lambda expressions
-------------------
+HOF overview
+------------
+
+A higher-order function is a function that takes a function as a parameter or
+returns a function. ("Regular" functions are called first-order functions).
+
+HOFs enable us to create high-level abstractions, and are a fundamental tool in
+functional programming.
 
 
-Operator sections
------------------
+Functions as values
+-------------------
+
+To use or implement HOFs it is necessary to obtain function values; there are
+numerous ways of doing this.
 
 
-HOFs
-----  
+-- Named functions
 
-A higher-order function is a function that takes one or more functions as
-parameters or returns a function. ("Regular" functions are called first-order
-functions).
+When we define functions at the top-level or in where/let clauses, their names
+are just symbols bound to function values:
 
-HOFs enable us to create higher-level abstractions, and are a fundamental
-tool in functional programming.
+> foo :: Int -> Int
+> foo = undefined
+> 
+> bar :: Int -> Int
+> bar = foo
 
-Note: due to currying, *all functions of 2 or more arguments* are HOFs!
+
+-- Partial application
+
+Due to currying, *all* functions of two or more arguments are HOFs. Partially
+applying a function returns a function of fewer arguments.
+
+Consider:
+
+> strCat :: String -> String -> String
+> strCat s t = s ++ t
+>
+> sayHiTo :: String -> String
+> sayHiTo = strCat "hi, "
 
 
-Composition & Application
--------------------------
+-- Operator sections
 
-< (.) :: (b -> c) -> (a -> b) -> a -> c
-< ($) :: (a -> b) -> a -> b
+We can also partially apply operators by placing them in parentheses and
+leaving out one of their arguments, which give us partial functions "waiting
+for" the missing argument.
 
-(.) succinctly expresses the layering of two or more functions:
+E.g.,
 
-< (sqrt . sin) 1
-< (take 10 . repeat) 5
+> twoPlus = (2+)
+> divByThree = (/3)
+> divThreeBy = (3/)
+> sayHiTo' = ("hi, " ++)
 
-( .) often encourages "point-free" (i.e., argument-less) function definitions:
+
+-- Lambda expressions
+
+Lambda expressions allow us to define anonymous functions.
+
+Syntax: \ var1 var2 ... -> expression
+
+  Note: the expression after `->` extends as far to the right as possible,
+        so parenthesization is often needed!
+
+We can use it as an alternative way to define top-level functions:
+
+> sumOfSquares :: Num a => a -> a -> a
+> sumOfSquares = \x y -> x^2 + y^2
+
+
+We often use a lambda when we want to make it clear that a function is designed
+to return a function:
+
+> greeter :: String -> (String -> String) -- note: parens are superfluous
+> greeter g = \name -> g ++ ", " ++ name
+
+> sayHiTo'' = greeter "hi"
+
+
+We also use lambdas to create simple functions to be passed to HOFs:
+
+E.g., the library function `dropWhile` is the HOF version of drop:
+
+    dropWhile :: (a -> Bool) -> [a] -> [a]
+
+So we can do:
+
+    dropWhile (\x -> isDigit x || isPunctuation x) "01. Lorem ipsum"
+
+
+Function application
+--------------------
+
+Function application is defined via the `$` operator, thusly:
+
+    ($) :: (a -> b) -> a -> b
+    infixr 0 $
+    f $ x = f x
+
+
+The low(est) precedence and right associativity of `$` make it so we can often
+use it to avoid the excessive parenthesization that would be necessary with
+default function application (via space).
+
+E.g., how can we rewrite the following using `$`?
+
+    sayHiTo ("Michael" ++ "Lee")
+    show (abs (2 - 5))
+    take 5 (drop 10 (zip [1..] (repeat 'a')))
+
+
+Function composition
+--------------------
+
+Function composition is an operation on two functions that applies the first to
+the result of applying the second. It is defined thusly:
+
+    (.) :: (b -> c) -> (a -> b) -> a -> c
+    infixr 9 .
+    f . g = \x -> f (g x)
+
+
+`.` lets us succinctly combine functions:
+
+    (sqrt . sin) 1
+    (take 10 . repeat) 5
+
+
+`.` also facilitates "point-free" (i.e., argument-less) function definitions.
+
+E.g., re-implement `even'`, `k2h`, and `strip` with `.`
 
 > even' :: Integral a => a -> Bool
-> even' = (== 0) . (`rem` 2)
+> even' x = (x `rem` 2) == 0
 >
-> label :: Show a => a -> String
-> label = ("Val = " ++) . show
 >
 > k2c k = k - 273
 > c2f c = c * 9 / 5 + 32
@@ -65,136 +168,86 @@ Composition & Application
 >   | f > 100 = "too hot"
 >   | otherwise = "survivable"
 >
-> k2h = f2h . c2f . k2c
-
-($) is typically used to minimize parentheses:
-
-< show (abs (2 - 5))
-< show $ abs $ 2 - 5
-<
-< take 5 (drop 10 (zip [1..] (repeat 'a')))
-< take 5 $ drop 10 $ zip [1..] $ repeat 'a'
-
-Define (.) and ($) ourselves:
-
-> comp :: (b -> c) -> (a -> b) -> a -> c
-> f `comp` g = \x -> f (g x)
 >
-> app :: (a -> b) -> a -> b
-> infixr 0 `app` -- force low precedence right-associativity
-> f `app` x = f x
+> k2h  c = f2h (c2f (k2c c))
+>
+>
+> strip :: String -> String
+> strip s = reverse (dropWhile isSpace (reverse (dropWhile isSpace s)))
 
 
-Mapping as "Iteration"
-----------------------
+`.` also often does away with the need to create lambdas. 
 
-< map :: (a -> b) -> [a] -> [b]
+E.g., how can we do away with the lambda in the following?
+
+    dropWhile (\w -> length w > 3) $ words "hello how are you today?"
+
+
+Mapping
+-------
 
 `map` applies a function to each item of a list, returning the new list.
 
-Try out:
+    map :: (a -> b) -> [a] -> [b]
 
-< map even [1..10]
-< map reverse $ words "madam I refer to adam"
-< map (^2) [1..10]
-< map (\x->(x,x^2)) [1..10]
-< map (++) $ words "on over under across" -- what does this do?
-< map (\f -> f " the table") $ map (++) (words "on over under across")
-< map (map (*2)) [[1..5], [6..10], [11..15]]
 
-Define map ourselves:
+Interpret:
+
+    map even [1..10]
+    map reverse $ words "madam I refer to adam"
+    map (^2) [1..10]
+    map (\x->(x,x^2)) [1..10]
+    map (++) $ words "on over under across" -- what does this do?
+    map (\f -> f " the table") $ map (++) (words "on over under across")
+    map (map (*2)) [[1..5], [6..10], [11..15]]
+
+
+Implement `map` ourselves:
 
 > map' :: (a -> b) -> [a] -> [b]
-> map' _ [] = []
-> map' f (x:xs) = f x : map' f xs
+> map' = undefined
+
+
+`map` allows us to avoid performing explicit recursion in most situations where
+an input list is to be "transformed" into an output list of the same size. (When
+might it not be usable?)
 
 
 Filtering
 ---------
 
-< filter :: (a -> Bool) -> [a] -> [a]
+`filter` only keeps values in a list that pass a provided predicate:
 
-`filter` is another typical HOF. `filter` only keeps values in a list that pass
-a given predicate (a function that returns True/False).
+    filter :: (a -> Bool) -> [a] -> [a]
 
-Try out:
 
-< filter even [1..10]
-< filter (\(a,b,c) -> a^2+b^2==c^2) [(a,b,c) | a<-[1..10], b<-[a..10], c<-[b..10]]
-< filter (\s -> reverse s == s) $ words "madam I refer to adam"
-< map (\w -> (w,length w)) $ filter (\s -> reverse s == s) $ words "madam I refer to adam"
+Interpret:
+
+  filter even [1..10]
+
+  filter (\(a,b,c) -> a^2+b^2==c^2) $
+         [(a,b,c) | a <- [1..10], b <- [a..10], c <- [b..10]]
+
+  filter (\s -> reverse s == s) $ 
+         words "madam I refer to adam"
+
+  map (\w -> (w,length w)) $ 
+      filter (\s -> reverse s == s) $ 
+      words "madam I refer to adam"
   
-Define filter ourselves:
+
+Implement `filter` ourselves:
 
 > filter' :: (a -> Bool) -> [a] -> [a]
-> filter' _ [] = []
-> filter' p (x:xs) | p x = x : filter' p xs
->                  | otherwise = filter' p xs
+> filter' = undefined
 
 
-Generalized "Zipping"
-_____________________
+`filter` replaces another category of explicitly recursive functions --- those
+that take an input list and extract a subset of the elements (possibly for
+further processing). 
 
-< zipWith :: (a -> b -> c) -> [a] -> [b] -> [c]
-< zipWith3 :: (a -> b -> c -> d) -> [a] -> [b] -> [c] -> [d]
-< zipWith4 ...
+E.g., consider this property from MP1:
 
-`zipWith` abstracts the zipping function (which, in zip, is just `(,)`)
-
-Try out:
-
-< zipWith (,) [1..5] [6..10]
-< zipWith (+) [1..5] [10,9..6]
-< zipWith (\x y -> x ++ ":" ++ show y) ["a", "b", "c"] [1..3]
-< zipWith3 (,,) [1..5] [10,20..50] [100,200..500]
-
-Yet another fibonacci definition!
-
-> fibonacci = 0 : 1 : zipWith (+) fibonacci (tail fibonacci)
-
-Define zipWith ourselves:
-
-> zipWith' :: (a -> b -> c) -> [a] -> [b] -> [c]
-> zipWith' _ [] _ = []
-> zipWith' _ _ [] = []
-> zipWith' f (x:xs) (y:ys) = f x y : zipWith' f xs ys
-
-
-Misc. HOFs
-----------
-
-< iterate :: (a -> a) -> a -> [a]
-< until :: (a -> Bool) -> (a -> a) -> a -> a
-< takeWhile :: (a -> Bool) -> [a] -> [a]
-
-Try out:
-
-< iterate (*2) 1
-< iterate (++".") ""
-
-Using `until`, implement Newton's method for finding square roots:
-
-1. Start with some guess g as the root of x
-2. Check if g^2 is close enough to x; if so, we're done
-3. Compute an improved guess by averaging g and x/g and repeat 2
-
-> newtonsSqrt :: (Floating a, Ord a) => a -> a
-> newtonsSqrt x = until check improve 1
->   where check g = abs (g^2 - x) < 0.00001
->         improve g = (g + x/g) / 2
-
-Try out:
-
-< takeWhile (\g -> abs (g^2-100) >= 0.000001) $ iterate (\g -> (g+100/g)/2) 1
-
-More list HOFs (import Data.List to try):
-
-< sortOn :: Ord b => (a -> b) -> [a] -> [a]
-< find :: (a -> Bool) -> [a] -> Maybe a
-< partition :: (a -> Bool) -> [a] -> ([a], [a])
-
-Try out:
-
-< sortOn length $ words "what is the correct order?"
-< find (\s -> reverse s == s) $ words "where is the civic center?"
-< partition even [1..10]
+    prop_luhnOneSol :: Property
+    prop_luhnOneSol = forAll genLuhnCandidates $ \cs ->
+      length (filter p3_luhn cs) == 1
