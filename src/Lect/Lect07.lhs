@@ -2,7 +2,7 @@
 % Lect 07 - Higher order functions
 % Michael Lee
 
-> module Lect.Lect07Complete where
+> module Lect.Lect07 where
 > import Data.Char
 > import Data.List
 
