@@ -39,7 +39,7 @@ Takeaways:
 Constructing lists
 ------------------
 
-`[]` and `:` are examples of data constructors (aka value constructors); i.e.,
+`[]` and `:` are examples of value constructors (aka data constructors); i.e.,
 they are functions that return values of the associated type (in this case, the
 polymorphic list type).
 
