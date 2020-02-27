@@ -82,8 +82,9 @@ Notable (& maybe surprising) language features
 > -- boundVar = 20 -- error!
  
 
-4. Lazy evaluation: Computations are not performed (e.g., function evaluations)
-                    until they are strictly needed.
+4. Lazy evaluation: Expressions (e.g., function calls) are not evaluated until
+                    their results are strictly needed. Unevaluated computations,
+                    called "thunks", are maintained in a graph.
 
 > possiblyTragic c = let e = error "Eeek!"
 >                        u = undefined
