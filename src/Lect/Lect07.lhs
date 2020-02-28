@@ -422,6 +422,7 @@ E.g. trace out the call `foldl (+) 0 [1..5]`:
 
   = ?
 
+---
 
 Note that each level of recursion in foldl adds another application of the
 combiner function to the "outside" of the accumulated result. Because of lazy
@@ -438,6 +439,34 @@ evaluated later on. E.g.,
 
     = (f (f ... (f (f (f (f v 1) 2) 3) 4) ...) N)
 
+When the accumulated result needs to be evaluated all at once, this can cause
+problems. E.g., try:
+
+    foldl (+) 0 [1..10^8]
+
+The stack overflow is caused by space needed to fully evaluate the thunk (not
+for the recursive calls!). This is entirely due to lazy evaluation. 
+
+We can force Haskell to be stricter by using `seq`, which has type:
+
+    seq :: a -> b -> b
+
+`seq` takes two arguments and forces strict evaluation of its first argument
+before evaluating the second argument (and returning a result). 
+
+Technically, `seq` only evaluates its first argument to "weak head normal form"
+(WHNF), which guarantees that if the outermost part of the argument expression
+is a function application, it will be evaluated until that is no longer the
+case. Note that a list constructor or other value constructor does not count as
+a function application)
+
+We can use `seq` to write a strict version of `foldl` like this:
+
+> foldl' :: (b -> a -> b) -> b -> [a] -> b
+> foldl' _ v [] = v
+> foldl' f v (x:xs) = let e = f v x in seq e $ foldl' f e xs
+
+---
 
 We can define a version of foldl where the initial argument is simply the first
 value in the provided list:
