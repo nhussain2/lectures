@@ -466,6 +466,23 @@ We can use `seq` to write a strict version of `foldl` like this:
 > foldl' _ v [] = v
 > foldl' f v (x:xs) = let e = f v x in seq e $ foldl' f e xs
 
+With `seq`'s help, `foldl' (+) 0 [1..5]` has the following expansion --- note
+the lack of an accumulated thunk:
+
+    foldl' (+) 0 (1 : (2 : (3 : (4 : (5 : [])))))
+
+  = foldl' (+) 1 (2 : (3 : (4 : (5 : []))))
+
+  = foldl' (+) 3 (3 : (4 : (5 : [])))
+
+  = foldl' (+) 6 (4 : (5 : []))
+
+  = foldl' (+) 10 (5 : [])
+
+  = foldl' (+) 15 []
+
+  = 15
+
 ---
 
 We can define a version of foldl where the initial argument is simply the first
