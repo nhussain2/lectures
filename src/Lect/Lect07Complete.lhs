@@ -526,7 +526,7 @@ Technically, `seq` only evaluates its first argument to "weak head normal form"
 (WHNF), which guarantees that if the outermost part of the argument expression
 is a function application, it will be evaluated until that is no longer the
 case. Note that a list constructor or other value constructor does not count as
-a function application)
+a function application.
 
 We can use `seq` to write a strict version of `foldl` like this:
 
