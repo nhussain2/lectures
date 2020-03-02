@@ -165,7 +165,8 @@ the same type!)
 -- `case` expressions
 
 `case` expressions allow us to perform pattern matching --- just as we can 
-across top-level function definitions --- on an arbitrary expression.
+across top-level function definitions --- on an arbitrary expression. Patterns
+can also be followed by guards!
 
 > distanceFromOrigin' :: (Floating a, Eq a) => (a,a) -> a
 > distanceFromOrigin' p = case p of (x,0) -> abs x
@@ -178,7 +179,8 @@ across top-level function definitions --- on an arbitrary expression.
 >              case name of "Michael" -> " and welcome!"
 >                           "Tom"     -> " friend."
 >                           "Harry"   -> " vague acquaintance."
->                           _         -> " stranger."
+>                           name | null name -> " nobody."
+>                                | otherwise -> " stranger."
 >              ++ " How are you?"
 
 
