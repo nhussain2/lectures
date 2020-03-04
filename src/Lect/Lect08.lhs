@@ -113,6 +113,34 @@ and extract their constituent fields:
 
 ---
 
+We call these "algebraic" data types because data types defined in this way can
+be formed from the "sum" and "product" of other types.
+
+Here are two sum types:
+
+> data T1 = T1v1 | T1V2 | T1V3
+> data T2 = T2V1 Bool | T2V2 T1
+
+To determine the values that make up either `T1` or `T2`, we just "sum up" the
+values that can be created using all their respective value constructors. How
+many values make up `T2`?
+
+Here's a product type:
+
+> data T3 = T3V Bool T1
+
+To determine the values that make up `T3`, we compute the "product" of the
+values for the constituent types of its single value constructor. How many
+values make up `T3`?
+
+Here's a type that is both a sum and product type:
+
+> data T4 = T4V1 T1 T2 | T4V2 T2 T3
+
+How many values make up `T4`?
+
+---
+
 We can also use "record" syntax to define attribute names and automatically
 generate "getter" functions:
 
