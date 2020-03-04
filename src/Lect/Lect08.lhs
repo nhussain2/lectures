@@ -118,7 +118,7 @@ be formed from the "sum" and "product" of other types.
 
 Here are two sum types:
 
-> data T1 = T1v1 | T1V2 | T1V3
+> data T1 = T1V1 | T1V2 | T1V3
 > data T2 = T2V1 Bool | T2V2 T1
 
 To determine the values that make up either `T1` or `T2`, we just "sum up" the
