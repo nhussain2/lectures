@@ -321,6 +321,21 @@ Let's define some list functions!
 > foldrL :: (a -> b -> b) -> b -> List a -> b
 > foldrL = undefined
 
+---
+
+There's nothing stopping us from defining arbitrarily complex, self-referential
+data types. E.g., here's a tree type:
+
+> data Tree a = Node a [Tree a] | Leaf a deriving Show
+
+Which can be used to model hierarchical data:
+
+> t1 :: Tree String
+> t1 = Node "Animals" [
+>        Leaf "Arthropods", 
+>        Node "Chordates" [ Leaf "Birds", Leaf "Mammals", Leaf "Reptiles" ],
+>        Leaf "Nematodes"
+>      ]
 
 Type Classes
 ------------
