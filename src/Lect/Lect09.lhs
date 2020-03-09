@@ -22,7 +22,8 @@ Functors
 --------
 
 Functors are a class of types that support a "mapping" operation. An instance of
-functor must be a polymorphic type, as a type variable will be used to repesent the target of the mapped function. Here's the `Functor` class:
+functor must be a polymorphic type, as a type variable will be used to repesent
+the target of the mapped function. Here's the `Functor` class:
 
 > class Functor f where
 >   fmap :: (a -> b) -> f a -> f b
@@ -185,7 +186,8 @@ handles it correctly:
 
 ---
 
-How do we make a list an applicative? I.e., what sort of context does a list represent?
+How do we make a list an applicative? I.e., what sort of context does a list
+represent?
 
 > instance Applicative [] where
 >   pure = undefined

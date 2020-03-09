@@ -22,7 +22,8 @@ Functors
 --------
 
 Functors are a class of types that support a "mapping" operation. An instance of
-functor must be a polymorphic type, as a type variable will be used to repesent the target of the mapped function. Here's the `Functor` class:
+functor must be a polymorphic type, as a type variable will be used to repesent
+the target of the mapped function. Here's the `Functor` class:
 
 > class Functor f where
 >   fmap :: (a -> b) -> f a -> f b
