@@ -16,6 +16,7 @@ Agenda:
   - Functors
   - Applicatives
   - Monads
+  - Laws
 
 
 Functors
@@ -368,3 +369,69 @@ translate the following `do` block to lambda notation using `>>=` and `>>`:
            z = pureVal
        r3 <- func3 y z
        return (r1, r2, r3)
+
+
+Laws
+----
+
+Properly implemented instances of Functors, Applicatives, and Monads should
+conform to a handful of laws. These laws exist to ensure that all class
+instances behave in a predictable way. The compiler does not, however, enforce
+these laws for us!
+
+-- Functor laws
+
+  1. Identity:
+    
+       fmap id = id
+
+  2. Composition:
+
+       fmap (f . g) = (fmap f . fmap g)
+
+-- Applicative laws
+
+  1. Identity:
+
+       pure id <*> v = v
+
+  2. Homomorphism:
+
+       pure f <*> pure x = pure (f x)
+
+  3. Interchange:
+
+       u <*> pure x = pure ($ x) <*> u
+
+  4. Composition:
+
+       pure (.) <*> u <*> v <*> w = u <*> (v <*> w)
+    
+-- Monad laws
+
+  1. Left Identity:
+
+       return x >>= f = f x
+
+     or equivalently: 
+     
+       do { y <- return x; f y } = do { f x }
+
+  2. Right Identity:
+
+       m >>= return = m
+
+     or equivalently:
+
+       do { x <- m; return x } = do { m }
+
+  3. Associativity:
+
+       (m >>= \x -> f x) >>= g = m >>= (\x -> f x >>= g)
+    
+     or equivalently:
+
+       do                     do
+         y <- do x <- m   =     x <- m
+                 f x            y <- f x
+         g y                    g y
