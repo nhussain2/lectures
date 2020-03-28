@@ -57,8 +57,8 @@ deck = undefined
 
 
 data Hand = HighCard  | Pair | TwoPair | ThreeOfAKind | Straight
-            | Flush | FullHouse | FourOfAKind | StraightFlush 
-            deriving (Eq, Ord, Show)
+            | Flush | FullHouse | FourOfAKind | StraightFlush | RoyalFlush
+            deriving (Eq, Show, Ord)
 
 
 hand :: [Card] -> Hand
