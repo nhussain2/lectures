@@ -197,7 +197,7 @@ just to think of them as ordered sequences of values, and for `<*>` to apply a
 function in the first list to the corresponding element in the second:
 
 > instance Applicative [] where
->   pure x = [x]
+>   pure x = repeat x
 >
 >   [] <*> _ = []
 >   _ <*> [] = []
