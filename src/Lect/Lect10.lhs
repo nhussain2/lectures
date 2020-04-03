@@ -3,6 +3,8 @@
 % Michael Lee
 
 > module Lect.Lect10 where
+> import Data.List
+> import Data.Maybe
 
 Some Monads
 ===========
@@ -132,3 +134,156 @@ What do the following evaluate to?
 >   logAppend "Warmed up"
 >   z <- logOp "Add" $ x + y
 >   return "Boom!"
+
+
+State monad
+-----------
+
+Though Haskell doesn't allow for stateful functions, we can simulate the idea by
+defining functions that take an input state and use it to compute a value,
+returning that alongside an updated state. 
+
+The `State` type represents just such a function:
+
+> data State s a = State { runState :: s -> (s, a) }
+
+
+We can define stateful functions that represent stack manipulations, where the
+state is represented as a list and the computed value depends on the stack
+operation semantics:
+
+> pop :: State [a] a
+> pop = undefined
+
+> push :: a -> State [a] ()
+> push x = undefined
+
+> peek :: State [a] a
+> peek = undefined
+
+
+We can now run these operations like so on input lists:
+
+    runState pop [1..10]
+
+    runState (push 5) [1..10]
+
+    runState peek [1..10]
+
+
+More intriguingly, we can chain them, like this:
+
+    let s1 = []
+    in let (s2, _) = runState (push 5) s1
+       in let (s3, _) = runState (push 7) s2
+          in let (s4, x) = runState pop s3
+             in let (s5, y) = runState pop s4
+                in x+y
+
+But this is really, really ugly. Monads exist to help us get rid of all the
+manual chaining. So let's make a Monad out of State!
+
+---
+
+Start with Functor:
+
+> instance Functor (State s) where
+>   fmap f st = undefined
+
+Then Applicative:
+
+> instance Applicative (State s) where
+>   pure = undefined
+>   stf <*> stx = undefined
+
+And finally Monad:
+
+> instance Monad (State s) where
+>   st >>= f = undefined
+
+
+Here's how we can use the State monad to chain together stack operations:
+
+> stackArith :: State [Int] ()
+> stackArith = do
+>   w <- pop
+>   x <- pop
+>   let wx = w * x
+>   y <- pop
+>   z <- pop
+>   let yz = y * z
+>   push $ wx + yz
+
+---
+
+If we define a few functions that let us treat lists like mapping structures:
+
+> get :: Eq a => a -> [(a,b)] -> b
+> get x ((k,v):kvs) | x == k = v
+>                   | otherwise = get x kvs
+
+> put :: Eq a => a -> b -> [(a,b)] -> [(a,b)]
+> put x y [] = [(x,y)]
+> put x y ((kv@(k,_)):kvs) | x == k = (k,y):kvs
+>                          | otherwise = kv : put x y kvs
+
+
+We can write stateful functions that use them to store and update "variable" values:
+
+> var_get :: String -> State [(String, a)] a
+> var_get v = undefined
+
+> var_put :: String -> a -> State [(String, a)] ()
+> var_put v x = undefined
+
+
+And now we can chain together what looks like a simple imperative program:
+
+> quadRoots :: State [(String, Double)] (Double, Double)
+> quadRoots = do
+>   a <- var_get "a"
+>   b <- var_get "b"
+>   c <- var_get "c"
+>   var_put "disc" $ b^2 - 4*a*c
+>   disc <- var_get "disc"
+>   var_put "r1" $ (-b - sqrt disc) / (2*a)
+>   var_put "r2" $ (-b + sqrt disc) / (2*a)
+>   r1 <- var_get "r1"
+>   r2 <- var_get "r2"
+>   return (r1, r2)
+
+---
+
+An example that starts to better illustrate the power of monads is in the
+implementation of a tree-relabeling function.
+
+Say we have a binary tree type:
+
+> data Tree a = Node a (Tree a) (Tree a) | Leaf a deriving Show
+
+
+Let's write a function that "relabels" the values in a tree using values pulled
+from a list. For example, if we use the list "abcdefg" to relabel the following
+tree, we should get back the tree where 1 is replaced with 'a', 2 with 'b', 3
+with 'c', etc.
+
+> t1 :: Tree Int
+> t1 = Node 1 
+>        (Node 2 
+>          (Leaf 3)
+>          (Leaf 4))
+>        (Node 5 
+>          (Leaf 6)
+>          (Leaf 7))
+
+
+Let's implement this directly:
+
+> relabel :: Tree a -> [b] -> Tree b
+> relabel = undefined
+
+
+Let's try to write this using the State monad:
+
+> relabel' :: Tree a -> State [b] (Tree b)
+> relabel' = undefined
