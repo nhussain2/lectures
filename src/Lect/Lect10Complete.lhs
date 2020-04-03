@@ -299,13 +299,22 @@ The State monad to the rescue. Note how, in the following code, the monad takes
 care of maintaining its own internal state. 
 
 > relabel' :: Tree a -> State [b] (Tree b)
-> relabel' (Leaf x) = do y <- pop
->                        return $ Leaf y
+> relabel' (Leaf x) = do l <- pop
+>                        return $ Leaf l
+> 
 > relabel' (Node x l r) = do y <- pop
 >                            l' <- relabel' l
 >                            r' <- relabel' r
 >                            return $ Node y l' r'
 
+
 To relabel the tree above, we need simply do:
 
     runState (relabel' t1) "abcdefg"
+
+
+Note that we could also have implemented relabel using the applicative style:
+
+> relabel'' :: Tree a -> State [b] (Tree b)
+> relabel'' (Leaf x) = Leaf <$> pop
+> relabel'' (Node x l r) = Node <$> pop <*> relabel' l <*> relabel' r
