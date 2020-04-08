@@ -277,9 +277,7 @@ represented by `State` monad values) is `sequence`:
 
 > sequence :: Monad m => [m a] -> m [a]
 > sequence [] = return []
-> sequence (m:ms) = do x <- m
->                      xs <- sequence ms
->                      return $ x:xs
+> sequence (m:ms) = undefined
 
 What do the following give us?
 
@@ -292,8 +290,7 @@ Sometimes we don't care about the result of a monadic action (e.g., for the
 
 > sequence_ :: Monad m => [m a] -> m ()
 > sequence_ [] = return ()
-> sequence_ (m:ms) = do m
->                       sequence_ ms
+> sequence_ (m:ms) = undefined
 
 And now we can do:
 
@@ -304,10 +301,10 @@ This pattern of mapping a function that returns a monad onto a list, then
 sequencing it is so common that we implement `mapM` and `mapM_`
 
 > mapM :: Monad m => (a -> m b) -> [a] -> m [b]
-> mapM f = (sequence . map f)
+> mapM f = undefined
 >
 > mapM_ :: Monad m => (a -> m b) -> [a] -> m ()
-> mapM_ f = (sequence_ . map f)
+> mapM_ f = undefined
 
 Enabling:
 
@@ -318,10 +315,10 @@ Finally, by flipping the order of arguments of `mapM` and `mapM_`, we have the
 `forM` and `forM_` functions:
 
 > forM :: Monad m => [a] -> (a -> m b) -> m [b]
-> forM = flip mapM
+> forM = undefined
 >
 > forM_ :: Monad m => [a] -> (a -> m b) -> m ()
-> forM_ = flip mapM_
+> forM_ = undefined
 
 This lets us write code like this:
 
@@ -376,34 +373,23 @@ The IO monad is conceptually defined very similarly to the State monad:
 
     data IO a = IO (RealWorld -> (RealWorld, a))
 
-RealWorld replaces the arbitrary state type, but otherwise the IO type also
-represents a polymorphic function that takes an input state and returns a tuple
-containing the output state and a value.
-
-There are a few more critical differences: 
+It looks similar to the State monad, with a few critical differences: 
 
   1. We cannot directly access the function contained within an IO value in
      order to apply it to an argument explicitly. A consequence of this is that
      once a value or computation is placed inside an IO monad, we can never
-     unwrap it --- i.e., it will forever be marked as an IO operation!     
+     unwrap it --- i.e., it will forever be marked as an IO operation!
      
   2. We cannnot create RealWorld values! The real world is stateful and
-     impure, so it has no place in Haskell programs.
-     
-     But if we have an IO value, how do we ever apply it to an input?
+     impure, so it has no place in Haskell programs. So how and when do IO
+     actions get performed?
 
 Here's the final piece of the puzzle -- the main function:
 
     main :: IO ()
 
-`main` is defined as an IO monad value (aka an IO "action") that returns
-nothing. When we compile our program and execute it (e.g., from the command
-line), this action is "run" on a RealWorld.
-
-Since this is the only place in our programs where we are handed a RealWorld
-value, every other IO action we wish to perform must tie into the stateful
-computation ultimately returned from `main`. We accomplish this by way of the
-applicative and monad operations.
+`main` is the only place where a RealWorld value is handed to our program, and
+this only happens at runtime.
 
 ---
 
