@@ -285,6 +285,9 @@ represented by `State` monad values) is `sequence`:
 > sequence (m:ms) = do x <- m
 >                      xs <- sequence ms
 >                      return $ x:xs
+>
+> -- applicatively:
+> sequence' (m:ms) = (:) <$> m <*> sequence ms
 
 What do the following give us?
 
@@ -299,6 +302,9 @@ Sometimes we don't care about the result of a monadic action (e.g., for the
 > sequence_ [] = return ()
 > sequence_ (m:ms) = do m
 >                       sequence_ ms
+>
+> -- applicatively:
+> sequence_' (m:ms) = (\_ _ -> ()) <$> m <*> sequence_ ms
 
 And now we can do:
 
