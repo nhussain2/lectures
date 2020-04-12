@@ -15,6 +15,7 @@ dependencies:
 - HUnit-approx
 - QuickCheck
 - test-invariant
+- mtl
 - deepseq
 - random
 - random-shuffle
