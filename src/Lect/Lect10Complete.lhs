@@ -539,7 +539,7 @@ Update "Main.hs" so that it implements a program which breaks its input up into
 lines, reverses each line (for additional security) and applies the Caesar
 cipher with a shift width of 5 to it, then prints out the encrypted lines.
 
-(Hint: look into the `line` and `unlines` functions).
+(Hint: look into the `lines` and `unlines` functions).
 
 Ans: 
 

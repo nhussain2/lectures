@@ -19,6 +19,7 @@ dependencies:
 - deepseq
 - random
 - random-shuffle
+- containers
 
 library:
   source-dirs: src

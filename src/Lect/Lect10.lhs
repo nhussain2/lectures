@@ -450,7 +450,7 @@ Update "Main.hs" so that it implements a program which breaks its input up into
 lines, reverses each line (for additional security) and applies the Caesar
 cipher with a shift width of 5 to it, then prints out the encrypted lines.
 
-(Hint: look into the `line` and `unlines` functions).
+(Hint: look into the `lines` and `unlines` functions).
 
 
 Q/A
@@ -473,7 +473,6 @@ Q: Couldn't lazy evaluation wreak havoc on programs that perform IO? E.g., if a
    program reads three different values from a file, but lazy evaluation causes
    the last read to be evaluated before the first two, the program would likely
    produce an incorrect result!
-
 
 Q: Do all monads impose strictly sequential evaluation, and thereby prevent
    us from taking advantage of Haskell's laziness?
