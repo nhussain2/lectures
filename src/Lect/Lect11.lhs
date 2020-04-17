@@ -10,8 +10,7 @@
 module Lect.Lect11 where
 import Data.List
 import Data.List.Split (chunksOf)
-import Data.Map (Map, empty, fromList, update, adjust, 
-                 findWithDefault, member, insertWith)
+import Data.Map (Map, empty, fromList, findWithDefault, member, insertWith)
 import System.Random
 import System.Random.Shuffle
 import Control.Monad.State
@@ -72,7 +71,8 @@ adjLocs (w, h) (x, y) =
               x' > 0 && x' <= w,
               y' > 0 && y' <= h]
 
--- when inserting a path between two cells, we need to 
+-- when inserting a path between two MazeLocs, we need to ensure both
+-- appear as keys in the cell map, and add them to each others' lists
 insertPath :: MazeLoc -> MazeLoc -> Maze -> Maze
 insertPath l1 l2 mz@(Maze _ cells) = undefined
 \end{code}
