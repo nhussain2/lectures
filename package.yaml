@@ -20,6 +20,7 @@ dependencies:
 - random
 - random-shuffle
 - containers
+- ansi-terminal
 
 library:
   source-dirs: src
