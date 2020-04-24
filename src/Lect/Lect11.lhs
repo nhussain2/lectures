@@ -379,7 +379,7 @@ maze thus far. Let's write it:
 
 \begin{code}
 bfsSolveMaze :: Maze -> Maybe Maze
-bfsSolveMaze = solveMaze' (length . mazePath)
+bfsSolveMaze = undefined
 \end{code}
 
 
