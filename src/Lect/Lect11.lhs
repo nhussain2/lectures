@@ -290,6 +290,7 @@ search goal adj comb unvisited visited = undefined
 -- convenience function for tracing search execution
 debug :: Show a => a -> b -> b
 debug x y = unsafePerformIO clearScreen `seq`
+            unsafePerformIO (setCursorPosition 0 0) `seq`
             unsafePerformIO (putStrLn $ show x) `seq`
             unsafePerformIO (threadDelay $ 3*10^5) `seq`
             y

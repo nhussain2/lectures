@@ -16,6 +16,7 @@ dependencies:
 - QuickCheck
 - test-invariant
 - mtl
+- array
 - deepseq
 - random
 - random-shuffle
