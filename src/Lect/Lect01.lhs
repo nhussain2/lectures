@@ -38,7 +38,7 @@ do your work in this class. They include:
 
 - Git, a version control system
 
-- Bitbucket, a Git hosting service
+- GitHub, a Git hosting service
 
 - Stack, a tool you'll use to install the Haskell compiler and libraries,
   and compile and test your code
@@ -46,8 +46,6 @@ do your work in this class. They include:
 - a source code editor with Haskell support --- I recommend Visual Studio Code
   with the Haskelly plugin unless you strongly prefer a different editor and
   are willing to figure out how to set it up on your own
-
-Screencast demonstrating the tools above at https://youtu.be/JUIFbKOoCSA
 
 
 Notable (& maybe surprising) language features
