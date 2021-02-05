@@ -68,7 +68,10 @@ Notable (& maybe surprising) language features
 > 
 > mysteryFn1 = (^2)
 >
-> mysteryFn2 = length . words
+> mysteryFn2 = length . words -- composition of two functions, composing the function 'length' with the function 'words'
+-- length finds the length of a list
+-- :t mysteryFn2 (type) will be String -> Int (takes String, returns Int)
+-- mysteryFn2 "hello how are you" --> 4
 > 
 > mysteryFn3 f s = [(abs $ f $ length w, w) | w <- words s]
 
@@ -78,35 +81,54 @@ Notable (& maybe surprising) language features
 
 > boundVar = 10
 > -- boundVar = 20 -- error!
+-- ghci, if you recompile, you can change the value because it's rerun. In source file though, it will give a multiple declarations error.
  
 
 4. Lazy evaluation: Expressions (e.g., function calls) are not evaluated until
                     their results are strictly needed. Unevaluated computations,
                     called "thunks", are maintained in a graph.
 
-> possiblyTragic c = let e = error "Eeek!"
->                        u = undefined
->                    in case c of 'e' -> e
->                                 'u' -> u
->                                 otherwise -> "safe"
->
-> safeDiv x y = let q = x `div` y
->               in if y == 0
->                  then 0
->                  else q
+-- cannot evaluate error or undefined in Haskell, program breaks
 
+> possiblyTragic c = let e = error "Eeek!" -- e is set to error "Eeek!"
+>                        u = undefined -- u is set to undefined, both e, u are dangerous - evaluating them will break program
+>                    in case c of 'e' -> e -- if c is e, evaluate e variable
+>                                 'u' -> u -- if u, then evaluate u variable
+>                                 otherwise -> "safe" -- otherwise evaluate "safe"
+
+-- this is an instance where laziness comes in handy.
+
+-- possiblyTragic 'e' gives error Eeek!
+-- possiblyTragic 'u' gives error
+-- possiblyTragic 'a' gives safe
+
+-- takes a character :t Char -> [Char] takes character, returns list of characters (String)
+
+>
+-- div is for integer division: 10 div 3 = 3, 10 div 0 = error (no way to define infinity)
+
+> safeDiv x y = let q = x `div` y -- q = x div y
+>               in if y == 0 -- if y is zero, return 0 otherwise return q (which is the actual division)
+>                  then 0 -- feels backwards bc q has already been computed???
+>                  else q
+-- safeDiv 10 0, 0
+-- lazy, never evaluates because it sees that y is 0, hence returns 0
+-- type for safeDiv? 
 
 5 . Order-independence: The order bindings appear in code doesn't matter.
 
-> w = x + 2
+> w = x + 2 
 > x = w - 5
+-- what's x? no answer, it's infinite (recurses forever)
+-- Haskell throws no error but compiles a recursion that doesn't end
 >
-> evenN 0 = True
+> evenN 0 = True 
 > evenN n = oddN (n-1)
 >
 > oddN 0 = False
 > oddN n = evenN (n-1)
 
+-- mutually recursive functions
 
 6. Concise
 
@@ -119,8 +141,8 @@ Notable (& maybe surprising) language features
    - Declarative vs. Imperative style!
 
 > palindromes = sortOn snd
->               . map (\w -> (w,length w))
->               . filter (\s -> reverse s == s)
+>               . map (\w -> (w,length w)) -- map every string onto a tuple, string itself and the length of it
+>               . filter (\s -> reverse s == s) -- filtered using a lambda function
 >               . words 
 
 
@@ -148,10 +170,28 @@ start of group.
 >     LT -> do putStrLn "Too low!"
 >              doGuessing num
 >     GT -> do putStrLn "Too high!"
->              doGuessing num
+>              doGuessing num 
 >     EQ -> putStrLn "You Win!"
+
+-- function that does IO
 
 Read the [Haskell Wikibook](https://en.wikibooks.org/wiki/Haskell/Indentation)
 for a briefer on the layout rule, and the 
 [Haskell language report](https://www.haskell.org/onlinereport/haskell2010/haskellch2.html#x7-210002.7)
 for all the gory details.
+
+
+
+Notes:
+-- :r - reloads source file after changing it 
+-- need to leave space below and above program line (starting with '>')
+-- comment starts with 2 dashes
+-- LHS - literate source file 
+-- :q - quits out of ghci
+-- String = [Char] --> String is a list of characters
+-- words? Function that takes a string, returns a list of strings
+-- words :: String -> [String]
+
+
+
+
