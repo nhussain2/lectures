@@ -213,11 +213,18 @@ Syntax:
   - you can also use `let` to create local vars (without `in`)
 
 E.g.,
+-- python would be 2*x for etc.. using | as for
+[2*x | x <- [1..5]]
+[2,4,6,8,10]
+<- is where x is coming from
 
 > evens = [2*x | x <- [1..]]
 >
+-- get all x's of all numbers, apply filters where x mod 2 == 0
+-- following, is the predicate
 > evens' = [x | x <- [1..], x `mod` 2 == 0]
 > 
+-- 2 different source lists, building a list of lists
 > sudokuBoxes = [[[r,c] | r <- rs, c <- cs] | rs <- ["ABC", "DEF", "GHI"],
 >                                             cs <- ["123", "456", "789"]]
 >
@@ -225,9 +232,11 @@ E.g.,
 >                                      b <- [a..(p-a)],
 >                                      let c = p-(a+b),
 >                                      a^2 + b^2 == c^2]
+
+-- can define new local variable inside list constructor
 >
 > factors :: Integral a => a -> [a]
-> factors = undefined
+> factors n = [f <- [1..n], n `mod` f == 0]
 >
 > cartesianProduct :: [a] -> [b] -> [(a,b)]
 > cartesianProduct = undefined
