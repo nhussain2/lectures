@@ -239,10 +239,14 @@ E.g.,
 > factors n = [f <- [1..n], n `mod` f == 0]
 >
 > cartesianProduct :: [a] -> [b] -> [(a,b)]
-> cartesianProduct = undefined
+> cartesianProduct xs ys = [(x,y) | x <- xs, y <- ys]
+-- cycle through all values of x, and all values of y
 >
 > concat' :: [[a]] -> [a]
-> concat' = undefined
+> concat' ls = [x | l <- ls, x <- l]
+
+-- x <- l (get each item from each list)
+-- l <- ls (get each list within the list of lists )
 
 
 Common list functions
