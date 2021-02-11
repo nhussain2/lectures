@@ -241,7 +241,7 @@ E.g.,
 > cartesianProduct :: [a] -> [b] -> [(a,b)]
 > cartesianProduct xs ys = [(x,y) | x <- xs, y <- ys]
 -- cycle through all values of x, and all values of y
->
+
 > concat' :: [[a]] -> [a]
 > concat' ls = [x | l <- ls, x <- l]
 
