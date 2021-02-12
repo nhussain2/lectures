@@ -346,21 +346,25 @@ of such a type, a structurally recursive function will:
   1. start by determining how the value was constructed
 
   2. if the value is not a recursive instance of the data type, simply process
-     its immediate contents
+     its immediate contents (base case)
 
   3. if the value is a recursive instance of the data type, "deconstruct" it to 
-     process its immediate contents, then recurse on the nested value(s)
+     process its immediate contents, then recurse on the nested value(s) (recursive case)
 
 Pattern matching in Haskell helps with both (1) and (3).
 
 E.g., to compute the length of a list:
 
+-- could also add, length([x]) = 1
+-- or length(x:[]) = 1
+-- however the second line already takes care of that case
 > length' :: [a] -> Int
-> length' [] = 0
+> length' [] = 0 -- base case (length of empty list is 0)
 > length' (x:xs) = 1 + length' xs
 
 E.g., more built-in functions:
 
+-- gives back last element
 > last' :: [a] -> a
 > last' = undefined
 >
