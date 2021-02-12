@@ -286,13 +286,17 @@ implemented above). They include:
 
   - Class specific:
 
-    elem :: Eq a => a -> [a] -> Bool
-    maximum :: Ord a => [a] -> a
+    elem :: Eq a => a -> [a] -> Bool -- checks if elem in list
+    -- if we do, elem 'a' [1..10] - error - different type, will say True or False in list of same type
+    maximum :: Ord a => [a] -> a 
     minimum :: Ord a => [a] -> a
     sum :: Num a => [a] -> a
     product :: Num a => [a] -> a
     lines :: String -> [String]
     words :: String -> [String]
+
+    ord gets you the ASCII code of a character, like ord 'a' will give u its ASCII
+    chr will give you character of the ASCII code
 
 Note: many of these functions operate on a type class that includes lists and
       other recursive data types (We'll see how this works later.)
@@ -307,15 +311,26 @@ List processing functions
 value constructors can be used for pattern matching). So the first three basic
 operations are trivial to re-implement:
 
-> head' :: [a] -> a
-> head' (x:_) = x
+> head' :: [a] -> a -- takes list of a's, returns a
+> head' (x:_) = x -- given an input, that input consists of an element in front of a list 
+-- eg. (x:xs) x in front of some x's (parenthesis is necessary, value constructor for pattern match)
+
+-- head' (5:[]) will be 5
+-- if head' 5:4:3:2[], it would be 5
+-- cons is right associative, so 5:(4:(3:(2:[]))) 
+-- head' [5,4,3,2] will also be 5
 >
 > tail' :: [a] -> [a]
 > tail' (_:xs) = xs
+-- get everything but the head
+-- tail returns list, head returns element of a list
+-- tail [1] would give us []
+-- tail (1:[])
 > 
 > null' :: [a] -> Bool
 > null' [] = True
 > null' _  = False
+-- returns True if empty list, otherwise False
 
 
 But most other list-processing functions need to potentially extract multiple
