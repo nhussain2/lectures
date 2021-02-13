@@ -366,24 +366,40 @@ E.g., more built-in functions:
 
 -- gives back last element
 > last' :: [a] -> a
-> last' = undefined
+> last' [] = error "Empty list" -- base case, when the list is empty
+> last' [x] = x -- case where one element is present, return the only element (also like last' (x:[]) = x)
+> last' (_:xs) = last' xs
 >
->
-> (+++) :: [a] -> [a] -> [a]
-> (+++) = undefined
->
->
+-- ++ function, list concatenation, it will add both lists
+--(+++) :: [a] -> [a] -> [a]
+--(+++) [] [] = [] -- [] +++ [] = []
+--(+++) xs [] = xs
+--[] +++ ys = ys
+
+-- can write it now as 
+> xs +++ [] = xs
+> [] +++ ys = ys
+> (x:xs) +++ (y:ys) = x : (xs +++ (y:ys)) -- x will be first value, and then everything else, recursed
+
+-- 'index of' operator
 > (!!!) :: [a] -> Int -> a -- the ! in its name is an implicit warning as to its inefficiency!
-> (!!!) = undefined
+> [] !!! _ = error "index too large" -- base case
+> (x:_) !!! 0 = x -- first element
+> (x:xs) !!! n = xs !!! (n-1) -- n-1th index of xs (the rest of the values) recursive case
 >
->
+-- takes a list and returns the reversed list
 > reverse' :: [a] -> [a]
-> reverse' = undefined
+> reverse' [] = [] -- base case, empty list
+-- reverse' [x] = [x] -- single element base case, not necessary, as it would be satisfied in below function
+> reverse' (x:xs) = reverse' xs  +++ [x] -- reverse rest of list and concat to list of x (turn single element into list)
+-- VERY INEFFICIENT! 
 >
 >
+-- draws from the beginning of a list
 > take' :: Int -> [a] -> [a]
-> take' = undefined
->
+> take' _ [] = [] -- take anything from empty list, base case
+> take' 0 _ = [] -- base case, take 0 from anything
+> take' n (x:xs) = x : take' (n-1) xs -- take n-1 from the rest of the list and x from the beginning of the list
 >
 > splitAt' :: Int -> [a] -> ([a], [a])
 > splitAt' = undefined
