@@ -360,7 +360,10 @@ E.g., to compute the length of a list:
 -- however the second line already takes care of that case
 > length' :: [a] -> Int
 > length' [] = 0 -- base case (length of empty list is 0)
-> length' (x:xs) = 1 + length' xs
+> length' (_:xs) = 1 + length' xs -- take list apart, such that there is a value and a list, recurse on list
+
+-- recursive constructor in a list is the cons operator
+-- start and list -> it's recursive
 
 E.g., more built-in functions:
 
@@ -401,16 +404,45 @@ E.g., more built-in functions:
 > take' 0 _ = [] -- base case, take 0 from anything
 > take' n (x:xs) = x : take' (n-1) xs -- take n-1 from the rest of the list and x from the beginning of the list
 >
+
+-- give an integer and a list, gives a tuple of 2 lists
+-- split at 0, [], rest of list on other side
+-- if bigger than list, all of values, []
+-- for any index, empty list on both sides
 > splitAt' :: Int -> [a] -> ([a], [a])
-> splitAt' = undefined
+> splitAt' _ [] = ([],[]) -- base case, empty list
+> splitAt' 0 xs = ([], xs) -- base case, 0 with list, empty list in front
+> splitAt' n (x:xs) =  let (ys, zs) = splitAt' (n-1) xs
+                       in (x:ys, zs)
+-- got a let function to pattern match, recurse for n-1
+-- deconstructing result and putting it back into return value
+-- recursive call gives a common pattern
 >
->
+-- function that takes a value and returns a boolean (predicate)
+-- making a decision about that value (predicate)
+-- takes a list of as as well, returns tuple
+-- breaks on first value that is true in the condition (matches the predicate and chops the list there)
 > break' :: (a -> Bool) -> [a] -> ([a], [a])
-> break' = undefined
+> break' = _ [] = ([],[]) -- base case
+> break' p(x:xs) = if p x -- if predicate is true on x
+                   then ([], x:xs) -- break at start of x
+                   else let (ys, zs) = break' p xs in (x:ys, zs)
+                   -- else, recurse using pattern matching again
 >
->
+-- Let's clean it up now!
+> break'' :: (a -> Bool) -> [a] -> ([a], [a])
+> break'' = _ [] = ([],[]) -- base case
+> break'' p l@(x:xs) | p x = ([], l) -- break at start of x
+                     | otherwise = let (ys, zs) = break' p xs 
+                                   in (x:ys, zs)
+
+-- get back a list of strings, without spaces
 > words' :: String -> [String]
-> words' = undefined
+> words' "" = [] -- base case (empty string gives empty list)
+-- function that eats up all the spaces
+> words' (' ':cs) = words' cs -- if space, eat it up, leave rest of character
+> words' l@(c:cs) = let (w, ds) = break' isSpace l   
+                  in w : words' ds -- on the rest of the words now
 
 E.g., the Caesar cipher is an encryption scheme that takes a plain text input
 string P and a shift value N, and produces an encrypted version of the string
@@ -418,7 +450,7 @@ by replacing each letter in P with one N letters away in the alphabet (wrapping
 around, if needed).
 
 For the string "HELLO WORLD" and a shift value of 5:
-
+-- shifts characters to the right by 5, if it reaches end of alphabet, you loop to the beginning of the alphabet
   Plain:      H E L L O  W O R L D
   Encrypted:  M J Q Q T  B T W Q I
 
@@ -427,5 +459,25 @@ their corresponding ASCII codes. `ord`/`chr` do this. `isLetter` can be used to
 determine if a character is a letter. We'll convert all letters to uppercase
 for simplicity with `toUpper`.
 
+-- takes n, and strings (n is the shift value)
+
 > caesar :: Int -> String -> String
-> caesar = undefined
+> caesar _ "" = "" -- empty string gives empty string
+> caesar 0 s = s -- base case, shift of 0 gives the same string
+> caesar n (c:cs) = (if isLetter c then encript (toUpperc) else c) : caesar n cs 
+-- entire if else evaluates to the character which we then stick it to
+>      where encrypt c = n2c ((c2n c + n) `mod` 26)
+>            n2c n = chr (n + ordA) -- convert number to char
+>            c2n c = ord c - ordA -- convert char to number
+>            ordA = 65
+-- n2c is number to char, number to c2n
+
+-- deal with a single element, then process the rest recursively
+-- uppercase all letters
+-- toUpper takes lower case letter and gives an uppercase
+-- implement top down? 
+-- isLetter can check for whether its a letter
+-- to wrap around, for ord 'X' + 10, it will go onwards
+-- hence, we need to get back to 26
+-- (ord 'X' - ord 'A'  + 10) mod 26 + ord A
+-- get remainder and use that if exceeding value
