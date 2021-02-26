@@ -17,11 +17,15 @@ Designing recursive functions
 -----------------------------
 
 Steps:
-  1. determine the function type
+  1. determine the function type 
   2. identify which inputs can be decomposed into subproblems
   3. define the function for input patterns that can be handled non-recursively
+  -- base cases, use pattern matching (examples of how function should behave)
+  -- list out bunch of examples on input/output (more examples, the better)
   4. define the function for input patterns that require recursion
+  -- recursive cases
   5. ensure that the values are "shrunk" in recursive calls
+  -- make sure recursion completes (possibly option)
   6. generalize and simplify
 
 In steps 3 and 4, we might discover that we need additional functions, which 
@@ -31,16 +35,39 @@ themselves require stepping through the design process!
 
 E.g., summing integer values from 0 up to N:
 
-> sumTo :: undefined
-> sumTo = undefined
+> sumTo :: Integral a => a -> a
+> sumTo 0 = 0 -- base case
+> sumTo 1 = 1 -- base case
+> sumTo x = x + sumTo(x-1) -- recursive, sumTo(x-1) is the sub problem
 
 --- 
 
 E.g., compute all permutations of values in a list
 
-> permutations :: undefined
-> permutations = undefined
+"abc" => [abc, cba, bca, bac, acb, cab]
 
+> permutations :: [a] -> [[a]] -- takes a list of things, returns list of list of things, each sublist is a permutation
+> permutations [] = [[]] -- empty list base case, one permutation, empty list
+> -- permutations [x] = [[x]] -- single element
+> -- permutations [x,y] = [[x,y], [y,x]] -- 2 elements
+
+> -- permutations [x,y,z] = [[x,y,z], [y,x,z], [y,z,x],
+                          [x,z,y], [z,x,y], [z,y,x]]
+-- keep y,z in order and interleave x into it, then flip to z,y and interleave x into it again
+
+-- break list up into pieces,     xs is smaller version of problem
+> permutation (x:xs) = concat [interleave x p | p <- permutations xs]
+-- use concat to concat the list of lists 
+
+-- need a function, interleave
+> interleave :: a -> [a] -> [[a]]
+-- takes value, takes list of values and returns list of lists
+> interleave x[] = [[x]]
+-- interleave x[y] = [[x,y],[y,x]]
+-- interleave x[y,z] = [[x,y,z],[y,x,z], [y,z,x]]
+> interleave x l@(y:ys) = (x:l) : [ y:ll | ll <- interleave x ys]
+-- can use list comprehension
+-- y in front of the x interleaved of ys
 
 Structural vs. Generative recursion
 -----------------------------------
@@ -65,10 +92,28 @@ E.g., Newton's method for finding the square root of N starts with a guess g
       again. The intuition is that if g is too small, n/g will be increase the 
       guess, and if g is too big, n/g will decrease.
 
+improve :: (Floating a, Ord a) => a -> a
+iter :: (Floating a, Ord a) => a -> a
+goodEnough :: (Floating a, Ord a) => a -> Bool
 
-> newtonsSqrt :: undefined
-> newtonsSqrt = undefined
->
+> newtonsSqrt :: (Floating a, Ord a) => a -> a
+> newtonsSqrt n = iter (n/2) --let g = n/2
+              --in if goodEnough g then g else iter g
+        where goodEnough g  = g^2 =~= n
+              improve g = (g + n/g) / 2
+              iter g | goodEnough g = g -- check to see if good enough
+                     | otherwise = iter (improve g) -- recurse, improve it
+
+      
+-- HELPER FUNCTIONS WE CAN USE
+-- good enough function, checks is good enough and returns T or F
+-- goodEnough ::  (Floating a, Ord a) => a -> Bool
+
+-- improves and returns new value
+--improve :: (Floating a, Ord a) => a -> a
+-- tries again
+-- iter :: (Floating a, Ord a) => a -> a
+
 > infix 4 =~= -- approx equals (might come in handy)
 > (=~=) :: (Floating a, Ord a) =>  a -> a -> Bool
 > x =~= y = abs (x - y) < 0.000001
