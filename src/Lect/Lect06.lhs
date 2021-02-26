@@ -123,10 +123,22 @@ goodEnough :: (Floating a, Ord a) => a -> Bool
 E.g., sort a list of values by splitting it in two, sorting each half, then 
 merging the sorted results:
 
-> mergesort :: undefined
-> mergesort = undefined
 
 
+> mergesort :: Ord a => [a] -> [a] -- need to be orderable to be sorted
+> mergesort [] = [] -- base case  (empty)
+> mergesort [x] = [x]  -- base case (1 sorted element)
+> mergesort [x,y] = if x<= y then [x,y] else [y,x]
+> mergesort xs = let (lhs, rhs) = splitAt (length xs `div` 2) xs -- split at the center
+                 in merge (mergesort lhs) (mergesort rhs) -- then recurse on each half
+-- we want a merge function to merge the list
+> merge :: Ord a => [a] -> [a] -> [a]
+-- merge [] [] = [] -- base case, empty list, don't need this one, the other two count for empty lists
+> merge xs [] = xs -- base case, 1 empty list
+> merge [] xs = xs -- base case, 1 empty list
+> merge l1@(x:xs) l2@(y:yx) | x <= y = x : merge xs l2 -- first elem of the list, recurse on rest of first list to second 
+                            | otherwise = y : merge l1 ys
+-- otherwise do vice versa
 Accumulators and Tail recursion
 -------------------------------
 
@@ -145,8 +157,16 @@ recursive call) in order to do its job. It would be more efficient to use the
 `:` operator to incrementally build up a partially reversed list over the course
 of the recursion. 
 
+-- ++ concat goes through the whole list itself, that's why its inefficient ++ 
+
 > reverse'' :: [a] -> [a] -> [a]
-> reverse'' = undefined
+> reverse' [] rev = rev -- when list is empty, return the rev
+> reverse'' (x:xs) rev = reverse'' xs(x:rev)
+
+"abc" ""
+"bc" "a"
+"c" "ba"
+"" "cba"
 
 The second argument of `reverse''` needs to be "primed" with an empty list, and
 then gradually accumulates the solution, which we obtain at the end of the 
@@ -156,8 +176,10 @@ So that the caller doesn't need to provide the priming value, accumulators are
 typically hidden inside where clauses:
 
 > reverse''' :: [a] -> [a]
-> reverse''' xs = rev xs []
->   where rev = undefined
+> reverse''' xs = rev xs [] -- we hide the empty list by putting it in a helper function instead of the actual reverse function
+>   where rev (x:xs) r = rev xs (x:r) -- rev is basically reverse''
+          rev [] r = r
+
 
 Try doing ":set +s" in ghci, then comparing outputs for the following:
 
@@ -179,17 +201,19 @@ Here we have two implementations --- one tail recursive and one not:
 
 > tailPartition :: Ord a => a -> [a] -> ([a],[a])
 > tailPartition n xs = part xs ([],[])
->   where part [] r = r
+>   where part [] r = r -- second argument is an accumulator
 >         part (y:ys) (lts,gts) | y < n     = part ys (y:lts, gts)
 >                               | otherwise = part ys (lts, y:gts)
 >
->
+> -- lts - less than side, gts -- greater than side
 > nontailPartition :: Ord a => a -> [a] -> ([a],[a])
 > nontailPartition n [] = ([],[])
 > nontailPartition n (x:xs) | x < n     = (x:lts, gts)
 >                           | otherwise = (lts, x:gts)
 >   where (lts, gts) = nontailPartition n xs
+-- lazier
 
+-- our natural form of non-accumalative recursion allows us to take advantage of laziness compared to tail-based recursion. 
 What happens when we call the two variations on an infinite list, but we only
 need to take a fixed number of values from a given partition?
 
