@@ -540,24 +540,41 @@ Let's extract the pattern and define `foldl`:
 
 E.g. trace out the call `foldl (+) 0 [1..5]`:
     foldl (+) 0 (1 : (2 : (3 : (4 : (5 : [])))))
-  = ?
+  = foldl (+) (0 + 1) : (2 : (3 : (4 : (5 : []))))
+  = foldl (+) ((0 + 1) + 2) : (3 : (4 : (5 : [])))
+
+  fold left is just recursion using accumulators
+
+
 ---
+
+
 Note that each level of recursion in foldl adds another application of the
 combiner function to the "outside" of the accumulated result. Because of lazy
 evaluation, this means we potentially build up an immense "thunk" to be
 evaluated later on. E.g.,
+
+
     foldl f v [1..N]
     = foldl f (f v 1) [2..N]
     = foldl f (f (f v 1) 2) [3..N]
     = foldl f (f (f (f v 1) 2) 3) [4..N]
     = (f (f ... (f (f (f (f v 1) 2) 3) 4) ...) N)
+
+
 When the accumulated result needs to be evaluated all at once, this can cause
 problems. E.g., try:
     foldl (+) 0 [1..10^8]
+
+
 The stack overflow is caused by space needed to fully evaluate the thunk (not
 for the recursive calls!). This is entirely due to lazy evaluation. 
 We can force Haskell to be stricter by using `seq`, which has type:
+
+
     seq :: a -> b -> b
+
+
 `seq` takes two arguments and forces strict evaluation of its first argument
 before evaluating the second argument (and returning a result). 
 Technically, `seq` only evaluates its first argument to "weak head normal form"
@@ -566,11 +583,17 @@ is a function application, it will be evaluated until that is no longer the
 case. Note that a list constructor or other value constructor does not count as
 a function application.
 We can use `seq` to write a strict version of `foldl` like this:
+
+
 > foldl' :: (b -> a -> b) -> b -> [a] -> b
 > foldl' _ v [] = v
-> foldl' f v (x:xs) = let e = f v x in seq e $ foldl' f e xs
+> foldl' f v (x:xs) = let e = f v x
+                      in seq e $ foldl' f e xs
+
+
 With `seq`'s help, `foldl' (+) 0 [1..5]` has the following expansion --- note
 the lack of an accumulated thunk:
+
     foldl' (+) 0 (1 : (2 : (3 : (4 : (5 : [])))))
   = foldl' (+) 1 (2 : (3 : (4 : (5 : []))))
   = foldl' (+) 3 (3 : (4 : (5 : [])))
@@ -583,19 +606,32 @@ We can define a version of foldl where the initial argument is simply the first
 value in the provided list:
 > foldl1 :: (a -> a -> a) -> [a] -> a
 > foldl1 f (x:xs) = foldl f x xs
+
+
 And left-associative operations now work as expected:
     foldl1 (-) [10, 5, 3, 2]
     foldl1 (/) [200, 10, 5, 2]
+
+
 Additionally, the accumulator pattern built in to foldl allows us to implement
 functions like reverse more efficiently:
+
+
 > reverse' :: [a] -> [a]
-> reverse' = undefined
+> reverse' = foldl (\v x -> x:v) []
+
+better way to write this
+flip function
+> reverse' = foldl (flip (:))
+
+accumulator based reversal using left fold
+
 -- On infinite lists
 Which folds (if any) work with infinite lists?
 Try:
     take 10 $ foldr (:) [] [1..]
-    foldr (||) False $ map even [1..]
-    foldl (||) False $ map even [1..]
+    foldr (||) False $ map even [1..] -- works!
+    foldl (||) False $ map even [1..] -- does not work!
 ---
 Why?
 - foldr's combining function is applied to each element *before* the recursive
