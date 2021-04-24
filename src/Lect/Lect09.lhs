@@ -38,7 +38,8 @@ constructor.
 We can make a list a Functor, where `fmap` is identical to `map`
 
 > instance Functor [] where
->   fmap = undefined
+>   fmap _ [] = []
+>   fmap f(x:xs) = f x : fmap f xs
 
 Note that the implied type of `fmap` in the instance (replacing `f` from the
 class definition with the instance `[]`) is:
@@ -56,9 +57,11 @@ to map the function (2*) over the values in the list.
 ---
 
 Let's define `fmap` for the Maybe type:
+fmap :: (a->b) -> Maybe a -> Maybe b
 
 > instance Functor Maybe where
->   fmap = undefined
+>   fmap f (Just x) = Just $ f x
+>   fmap _ Nothing = Nothing 
 
 we can now do:
 
@@ -93,7 +96,11 @@ Let's define `fmap` for a tree:
 > data Tree a = Node a [Tree a] | Leaf a
 >
 > instance Functor Tree where
->   fmap = undefined
+>   -- fmap :: (a->b) -> Tree a -> Tree b
+> fmap f (Leaf x) = Leaf $ f x
+> fmap f (Node x ts) =  Node (f x) $ fmap (fmap f) ts
+
+-- ts is a list of trees
 
 Here's a `Show` instance that makes it easier to visualize trees and a few trees
 to play with:
@@ -163,9 +170,11 @@ in one Functor to a value in another Functor.
 Let's make `Maybe` an Applicative instance:
 
 > instance Applicative Maybe where
->   pure = undefined
->
->   (<*>) = undefined
+    -- pure :: a -> Maybe a
+>   pure = Just
+>   -- <*> :: Maybe (a->b) -> Maybe a -> Maybe b
+>   Just f (<*>) Just x = Just $ f x 
+>   _ <*> _ = Nothing
 
 
 Now we can do:
@@ -191,9 +200,10 @@ How do we make a list an applicative? I.e., what sort of context does a list
 represent?
 
 > instance Applicative [] where
->   pure = undefined
->
->   (<*>) = undefined
+>   pure x = [x]
+>   [] <*> _ = []
+>   _ <*> [] = []
+>   (f:fs) <*> (x:xs) = f x : (fs <*> xs) -- apply each function to each 
 
 Try:
 
@@ -210,12 +220,12 @@ We can't define multiple instances of a class for a given type, so we use
 Now we can make `NDList` an instance of Functor and Applicative:
 
 > instance Functor NDList where
->   fmap = undefined
+>   fmap f (NDList l) = NDList $ map f l
 >
 > instance Applicative NDList where
->   pure = undefined
+>   pure x = NDList [x]
 >
->   (<*>) = undefined
+>   NDList fs <*> NDList xs = NDList [ f x | f <- fs, x <- xs]
 
 Try:
 
@@ -232,14 +242,19 @@ interpretation.
 
 We can also make a function an Applicative:
 
-> instance Applicative ((->) a) where
->   pure = undefined
->
->   (<*>) = undefined
+> instance Applicative ((->) d) where
+-- pure :: a -> (d->a)
+>   pure x \_ -> x
+>               f            g
+-- (<*>) :: (d->(a->b)) -> (d->a) -> (d->b)
+>  f <*>  g = \x -> (f x) (g x)
+
+-- both f and g take d as an argument
 
 What does this do?
 
   (zip <*> drop 5) [1..10]
+  (1,6),(2,7),(3,8),(4,9),(5,10)
 
 ---
 
@@ -285,7 +300,7 @@ methods `>>=` ("bind"), `>>` ("sequence"), and `return`:
 
 > class (Applicative m) => Monad m where
 >   infixl 1 >>=
->   (>>=) :: m a -> (a -> m b) -> m b -- called "bind"
+>   (>>=) :: m a -> (a -> m b) -> m b -- called "bind" operator
 > 
 >   infixl 1 >>
 >   (>>) :: m a -> m b -> m b -- called "sequence"
@@ -299,7 +314,9 @@ methods `>>=` ("bind"), `>>` ("sequence"), and `return`:
 Let's make `Maybe` a Monad instance:
 
 > instance Monad Maybe where
->   (>>=) = undefined
+    -- (>>=) :: Maybe a -> (a -> Maybe b) -> Maybe b
+>   Just x >>= f x -- not Just since f returns Maybe b
+>   Nothing >>= _ = Nothing
 
 Now we get sensible results by doing:
 
@@ -330,12 +347,27 @@ integral operands:
 Without bind, we might write:
 
 > fDivs :: Integral a => a -> a -> a -> a -> a -> a -> Maybe a
-> fDivs a b c d e f = undefined
+> fDivs a b c d e f = case a `safeDiv` b 
+>                      of Nothing -> Nothing
+>                         Just r ->
+>                             case c `safeDiv` d
+>                             of Nothing -> Nothing
+>                                Just r' ->
+>                                    case (r+r') `safeDiv` e
+>                                   of Nothing -> Nothing
+>                                        Just r''-> Just $ r'' * f
+
 
 Or we can use our bind operator:
 
 > fDivs' :: Integral a => a -> a -> a -> a -> a -> a -> Maybe a
-> fDivs' a b c d e f = undefined
+                       value in a box
+> fDivs' a b c d e f = a `safeDiv` b >>= \r -> ( -- function is called on a/b
+                       c `safeDiv` d >>= \r' -> (
+                       (r+r') `safeDiv` e >>= \r'' -> (
+                       Just $ r'' * f)))
+
+
 
 Explain how this works!
 
@@ -349,6 +381,11 @@ syntax for doing this -- "do notation":
 >                          r'  <- c `safeDiv` d
 >                          r'' <- (r + r') `safeDiv` e
 >                          return $ r'' * f
+
+do hides the nesting
+
+return takes value and puts it in a box
+return $ r'' * f could be Just $ r'' * f
 
 If a line in a `do` block does not use the `<-` operator, then it and the
 following line are combined using the `>>` (sequence) operator. For example,

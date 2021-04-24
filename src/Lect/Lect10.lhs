@@ -35,8 +35,10 @@ non-deterministic intepretation of the applicative `<*>` operator:
 The list monad instance is consistent with this interpretation:
 
     instance Monad [] where
+      -- (>>=) :: [a] -> (a -> [b]) -> [b]
       xs >>= f = concat [f x | x <- xs]
 
+      list of values, binded to a function
 
 What do the following evaluate to?
 
@@ -78,22 +80,23 @@ log messages:
 As a functor, we should be able to apply functions to the value in a `Logger`:
 
 > instance Functor Logger where
->   fmap = undefined
+>   fmap f (Logger v m) = Logger (f v) m
 
 
 When combining `Logger` values as applicative instances, we should combine the
 log messages found in both `Logger`s:
 
 > instance Applicative Logger where
->   pure = undefined
->   (<*>) = undefined
+>   pure v = Logger v []
+>   (Logger f m1) <*>  (Logger x m2) = Logger (f x) (m1 ++ m2)
 
 
 Finally, let's define the monad instance:
 
 > instance Monad Logger where
->   (>>=) = undefined
-
+   -- (>>==) :: Logger a -> (a->Logger b) -> Logger b
+>   (Logger x m ) >>= f = let Logger y m' = f x 
+                          in Logger y (m++m') -- combining log messages
 
 We need a few functions that produce `Logger` values:
 
@@ -157,21 +160,45 @@ returning that alongside an updated state.
 
 The `State` type represents just such a function:
 
-> data State s a = State { runState :: s -> (s, a) }
+--     Type 
+--     Constructor (Data Constructor)
+> data State s a = State { runState :: s -> (s, a) } -- takes s, returns tuple of s and a
+-- takes input state, returns tuple of state and a
+-- runState :: State s a -> s -> (s,a)
+
+s a are type variables
+s represents state type, a represents value type
 
 
 We can define stateful functions that represent stack manipulations, where the
 state is represented as a list and the computed value depends on the stack
 operation semantics:
 
-> pop :: State [a] a
-> pop = undefined
+-- state is list of a's, value is a
+> pop :: State [a] a -- State (Type constructor)
+> pop = State $ \(x:xs) -> (xs, x) -- argument type going to be a list of a's, x:xs
+-- xs is list that is remaining, x is the value that is popped off
+-- create value of type State using the state value constructor
+
+-- pops off top val of stack, gives value and rest of stack
+
+How to call pop? 
+
+Not `pop [1..10]`. Why this fails? It's a stateful function not a real function
+Instead, to get the function out of pop, do (runState pop) [1..10] should be ([2,3,4,5,6,7,8,9,10] , 1)
+
+
+Stateful function that has no value, empty tuple () represents no value or Nothing
 
 > push :: a -> State [a] ()
-> push x = undefined
+> push x = State $ \xs -> (x:xs, ())
+
+adds x to the list, and the value next to it () is unimportant as it doesn't matter
 
 > peek :: State [a] a
-> peek = undefined
+> peek = State $ \(x:xs) -> (x:xs, x)
+
+Get back the same list as the input list but also get the value that we peeked at as x
 
 
 We can now run these operations like so on input lists:
@@ -199,24 +226,39 @@ manual chaining. So let's make a Monad out of State!
 
 Start with Functor:
 
+instance Functor Maybe where
+   fmap :: (a->b) -> Maybe a -> Maybe b   
+   fmap f (Just x) = Just (f x)
+
 > instance Functor (State s) where
->   fmap f st = undefined
+   -- fmap :: (a -> b) -> State s a -> State s b
+>   fmap f st = State $ \s -> let (s', x) = runState st s
+>                             in (s', f x)  
 
 Then Applicative:
 
 > instance Applicative (State s) where
->   pure = undefined
->   stf <*> stx = undefined
+-- pure :: a -> State s a
+>   pure = State $ \s -> (s,x)  -- value is x, state is s, value is the second part of the tuple
 
+-- <*> :: State s -> State s (a -> b) -> State s a -> State s b
+applicative takes two boxes, first box contains a function and the second box contains a value
+
+>   stf <*> stx = State $ \s -> let (s', f) = runState stf s 
+>                                   (s'', x) = runState stx s'
+>                               in (s'', f x)
+s
 And finally Monad:
 
 > instance Monad (State s) where
->   st >>= f = undefined
+-- (>>==) :: State s a -> (a -> State s b) -> State s b
+>   st >>= f = State $ \s -> let (s', x) = runState st s 
+                             in runState (f x) s' 
 
 
 Here's how we can use the State monad to chain together stack operations:
 
-> stackArith :: State [Int] ()
+> stackArith :: State [Int] () -- takes list of integers 
 > stackArith = do
 >   w <- pop
 >   x <- pop
@@ -226,6 +268,7 @@ Here's how we can use the State monad to chain together stack operations:
 >   let yz = y * z
 >   push $ wx + yz
 
+bind operator is actually occuring between all lines of code between the lines
 ---
 
 If we define a few functions that let us treat lists like mapping structures:
@@ -243,10 +286,10 @@ If we define a few functions that let us treat lists like mapping structures:
 We can write stateful functions that use them to store and update "variable" values:
 
 > var_get :: String -> State [(String, a)] a
-> var_get v = undefined
+> var_get v = State $ \s -> (s, get v s)
 
 > var_put :: String -> a -> State [(String, a)] ()
-> var_put v x = undefined
+> var_put v x = State $ \s -> (put v x s, ())
 
 
 And now we can chain together what looks like a simple imperative program:
@@ -277,7 +320,14 @@ represented by `State` monad values) is `sequence`:
 
 > sequence :: Monad m => [m a] -> m [a]
 > sequence [] = return []
-> sequence (m:ms) = undefined
+> sequence (m:ms) = m >>= \x -> sequence ms >>= \xs -> return (x:xs)
+
+> sequence (m:ms) = do x <- m
+                       xs <- sequence ms
+                       return (x:xs)
+
+\x -> extracts the value from the bind operator
+
 
 What do the following give us?
 
@@ -288,9 +338,14 @@ What do the following give us?
 Sometimes we don't care about the result of a monadic action (e.g., for the
 `push` operation), so we also have `sequence_`:
 
-> sequence_ :: Monad m => [m a] -> m ()
+> sequence_ :: Monad m => [m a] -> m () 
+
+return monad with empty tuple instead of a list of values
+
 > sequence_ [] = return ()
-> sequence_ (m:ms) = undefined
+> sequence_ (m:ms) = m >> sequence_ ms
+
+run the monad, sequence it with the other monad values
 
 And now we can do:
 
@@ -301,10 +356,12 @@ This pattern of mapping a function that returns a monad onto a list, then
 sequencing it is so common that we implement `mapM` and `mapM_`
 
 > mapM :: Monad m => (a -> m b) -> [a] -> m [b]
-> mapM f = undefined
+> mapM f = sequence . map f
 >
 > mapM_ :: Monad m => (a -> m b) -> [a] -> m ()
-> mapM_ f = undefined
+> mapM_ f = sequence_ . map f
+
+don't want to see the result of each stateful computation ()
 
 Enabling:
 
@@ -315,10 +372,10 @@ Finally, by flipping the order of arguments of `mapM` and `mapM_`, we have the
 `forM` and `forM_` functions:
 
 > forM :: Monad m => [a] -> (a -> m b) -> m [b]
-> forM = undefined
+> forM = flip mapM
 >
 > forM_ :: Monad m => [a] -> (a -> m b) -> m ()
-> forM_ = undefined
+> forM_ = flip mapM_
 
 This lets us write code like this:
 
@@ -357,13 +414,19 @@ with 'c', etc.
 Let's implement this directly:
 
 > relabel :: Tree a -> [b] -> Tree b
-> relabel = undefined
-
+> relabel (Leaf _) (x:xs) = Leaf x 
+> relabel (Node _ t1 t2) (x:xs) = Node x (relabel t1 xs) (relabel t2 xs)
 
 Let's try to write this using the State monad:
 
 > relabel' :: Tree a -> State [b] (Tree b)
-> relabel' = undefined
+> relabel' (Leaf _) = do x <- pop -- value at the head of the list, a leaf value
+>                     return $ Leaf x -- returns leaf with x
+
+> relabel' (Node _ l r) = do x <- pop
+>                            l' <- relabel' l
+>                            r' <- relabel' r
+>                            return $ Node x l' r'
 
 
 IO monad
@@ -412,11 +475,20 @@ We can sequence these two actions together like this:
 > main = do name <- getLine
 >           putStrLn $ "Hello, " ++ name
 
+> main = getLine >>= \name -> putStrLn $ "Hello, " ++ name
 
 Let's write a function that implements a guessing game:
 
 > guess :: Int -> IO ()
-> guess n = undefined
+> guess n = do putStrnLn "Enter a guess: "
+>           m <- readLn -- m is extracted from readLn
+>           case compare m n of
+>             LT -> do putStrLn "Guess was too small"
+>                      guess n
+>             GT -> do putStrLn "Guess was too big"
+>                      guess n
+>             otherwise -> putStrLn "You got it!"      
+
 
 
 ---
@@ -435,8 +507,10 @@ shift of 5 to it, then prints out the encrypted value:
 >
 >
 > caesarAction :: IO ()
-> caesarAction = undefined
+> caesarAction = do line <- getLine
+>                putStr $ caesar 5 line
 
+> caesarAction = caesar 5 <$> getLine >>= putStrLn
 
 This pattern of building an IO action around a function that takes a string and
 returns a string is so common that we have `interact`
